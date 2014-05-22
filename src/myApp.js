@@ -3,6 +3,7 @@ var g_GameZOrder = { bg: 0, ui: 1, char: 10, font: 100 }
 var MyGameLayer = cc.Layer.extend({
     bgsprite: null,
     char:null,
+    cmd:null,
 
     onEnter: function(){
         this._super();
@@ -19,6 +20,11 @@ var MyGameLayer = cc.Layer.extend({
         this.char.setAnchorPoint( 0.5, 0.5 );
         this.char.setPosition( size.width / 2, this.char.getContentSize().height / 2 );
         this.addChild( this.char, g_GameZOrder.char );
+
+        var temp = cc.MenuItemImage.create( s_CommandMenuHead );
+        this.cmd = new CommandLayer();
+        this.cmd.setPosition( size.width - 100, size.height / 2 );
+        this.addChild( this.cmd, g_GameZOrder.ui );
     }
 })
 

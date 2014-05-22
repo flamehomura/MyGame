@@ -7,6 +7,9 @@ var s_DemoBackGround = "demobg.jpg"
 
 var s_MainChar = "char/1.png"
 
+var s_CommandMenuHead = "cmd/cmdbg_f.png"
+var s_CommandMenuTail = "cmd/cmdbg_b.png"
+
 var g_resources = [
     //image
     //s_HelloWorld,
@@ -16,7 +19,10 @@ var g_resources = [
 
     s_BackGround,
     s_DemoBackGround,
-    s_StartBtn
+    s_StartBtn,
+
+    s_CommandMenuHead,
+    s_CommandMenuTail
 
     //plist
 
