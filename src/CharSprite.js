@@ -46,19 +46,18 @@ var CharSprite = cc.Sprite.extend({
             return cc.rectContainsPoint(myRect, getPoint);//this.convertTouchToNodeSpaceAR(touch));
         },
 
-        onTouchBegan: function (touch, event) {
-            cc.log("onTouchBegan");
+        onTouchBegan: function (touch, event)
+        {
             var target = event.getCurrentTarget();
             if (target._state != STATE_UNGRABBED) return false;
             if (!target.containsTouchLocation(touch)) return false;
-            cc.log("onTouchBegan true");
 
             target._state = STATE_GRABBED;
             return true;
         },
 
-        onTouchMoved: function (touch, event) {
-            cc.log("onTouchMoved");
+        onTouchMoved: function (touch, event)
+        {
             var target = event.getCurrentTarget();
             // If it weren't for the TouchDispatcher, you would need to keep a reference
             // to the touch from touchBegan and check that the current touch is the same
@@ -75,8 +74,8 @@ var CharSprite = cc.Sprite.extend({
             target.y = touchPoint.y;
         },
 
-        onTouchEnded: function (touch, event) {
-            cc.log("onTouchEnded");
+        onTouchEnded: function (touch, event)
+        {
             var target = event.getCurrentTarget();
             cc.assert(target._state == STATE_GRABBED, "Paddle - Unexpected state!");
             target._state = STATE_UNGRABBED;

@@ -21,12 +21,49 @@ var MyGameLayer = cc.Layer.extend({
         this.char.setPosition( size.width / 2, this.char.getContentSize().height / 2 );
         this.addChild( this.char, g_GameZOrder.char );
 
-        var temp = cc.MenuItemImage.create( s_CommandMenuHead );
         this.cmd = new CommandLayer();
         this.cmd.setPosition( size.width - 100, size.height / 2 );
         this.addChild( this.cmd, g_GameZOrder.ui );
+
+        for( var i = 0; i < cmdMenuItems.length; ++i ){
+            var tempMenu = new CommandMenuItem(
+                cmdMenuItems[i].title,
+                this.onCmdItemClicked,
+                this
+            )
+
+            this.cmd.addCommandItem( tempMenu );
+        }
+    },
+
+    onCmdItemClicked: function()
+    {
+        cc.log( "onCmdItemClicked" );
     }
 })
+
+var cmdMenuItems = [
+    {
+        title:"移动",
+        command:function(){ cc.log( "Move Cmd" ) }
+    },
+    {
+        title:"攻击",
+        command:function(){ cc.log( "Attack Cmd" ) }
+    },
+    {
+        title:"防御",
+        command:function(){ cc.log( "Defence Cmd" ) }
+    },
+    {
+        title:"特技",
+        command:function(){ cc.log( "Skill Cmd" ) }
+    },
+    {
+        title:"道具",
+        command:function(){ cc.log( "Item Cmd" ) }
+    }
+]
 
 var MyLayer = cc.Layer.extend({
     helloLabel:null,

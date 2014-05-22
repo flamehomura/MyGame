@@ -11,7 +11,8 @@
     "jsList" : [
         "src/resource.js",
         "src/CharSprite.js",
-        "src/Command/CommandMenu.js",
+        "src/Command/CommandLayer.js",
+        "src/Command/CommandMenuItem.js",
         "src/myApp.js"
     ]
 }

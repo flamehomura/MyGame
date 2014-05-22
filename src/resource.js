@@ -9,6 +9,7 @@ var s_MainChar = "char/1.png"
 
 var s_CommandMenuHead = "cmd/cmdbg_f.png"
 var s_CommandMenuTail = "cmd/cmdbg_b.png"
+var s_CommandMenuItemBg = "cmd/cmdbg.png"
 
 var g_resources = [
     //image
@@ -22,7 +23,8 @@ var g_resources = [
     s_StartBtn,
 
     s_CommandMenuHead,
-    s_CommandMenuTail
+    s_CommandMenuTail,
+    s_CommandMenuItemBg
 
     //plist
 
