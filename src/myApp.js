@@ -1,4 +1,11 @@
-var g_GameZOrder = { bg: 0, ui: 1, char: 10, font: 100 }
+var g_GameZOrder = {
+    bg: 0,
+    ui: 1,
+
+    char: 10,
+    charteam:11,
+
+    font: 100 }
 
 var MyGameLayer = cc.Layer.extend({
     bgsprite: null,
@@ -24,46 +31,8 @@ var MyGameLayer = cc.Layer.extend({
         this.cmd = new CommandLayer();
         this.cmd.setPosition( size.width - 100, size.height / 2 );
         this.addChild( this.cmd, g_GameZOrder.ui );
-
-        for( var i = 0; i < cmdMenuItems.length; ++i ){
-            var tempMenu = new CommandMenuItem(
-                cmdMenuItems[i].title,
-                this.onCmdItemClicked,
-                this
-            )
-
-            this.cmd.addCommandItem( tempMenu );
-        }
-    },
-
-    onCmdItemClicked: function()
-    {
-        cc.log( "onCmdItemClicked" );
     }
 })
-
-var cmdMenuItems = [
-    {
-        title:"移动",
-        command:function(){ cc.log( "Move Cmd" ) }
-    },
-    {
-        title:"攻击",
-        command:function(){ cc.log( "Attack Cmd" ) }
-    },
-    {
-        title:"防御",
-        command:function(){ cc.log( "Defence Cmd" ) }
-    },
-    {
-        title:"特技",
-        command:function(){ cc.log( "Skill Cmd" ) }
-    },
-    {
-        title:"道具",
-        command:function(){ cc.log( "Item Cmd" ) }
-    }
-]
 
 var MyLayer = cc.Layer.extend({
     helloLabel:null,
@@ -122,7 +91,13 @@ var MyLayer = cc.Layer.extend({
 
     onStartGame: function() {
         var scene = cc.Scene.create();
-        var layer = new MyGameLayer();
+        var size = cc.director.getWinSize();
+
+        var layer = new MapLayer( 8, 12 );
+        layer.setPosition( size.width / 2, size.height / 2 );
+        layer.createMap();
+        layer.addChar( 0, 6 );
+        layer.addCommandBar( 3, 8 );
 
         scene.addChild( layer );
         var transition = cc.TransitionProgressRadialCCW.create( 0.5,scene );

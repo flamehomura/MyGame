@@ -37,5 +37,22 @@ var CommandMenuItem = cc.MenuItemLabel.extend({
         }
 
         this._label = label;
+    },
+
+    selected: function ()
+    {
+        if( this._enabled )
+        {
+            cc.MenuItem.prototype.selected.call(this);
+        }
+    },
+
+    activate: function ()
+    {
+        if( this._enabled )
+        {
+            this.stopAllActions();
+            cc.MenuItem.prototype.activate.call(this);
+        }
     }
 })

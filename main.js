@@ -1,5 +1,5 @@
 cc.game.onStart = function(){
-    var designSize = cc.size(480, 800);
+    var designSize = cc.size(800, 600);
     var screenSize = cc.view.getFrameSize();
     cc.loader.resPath = "res/";
 
