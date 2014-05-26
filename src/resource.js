@@ -15,6 +15,9 @@ var s_CommandMenuTail = "cmd/cmdbg_b.png"
 var s_CommandMenuItemBg = "cmd/cmdbg.png"
 
 var s_MapGrass = "map/grass.png"
+var s_MapMoveRange = "map/moverange.png"
+var s_MapAttackRange = "map/attackrange.png"
+var s_MapSkillRange = "map/skillrange.png"
 
 var g_resources = [
     //image
@@ -37,6 +40,9 @@ var g_resources = [
 
     // map
     s_MapGrass,
+    s_MapMoveRange,
+    s_MapAttackRange,
+    s_MapSkillRange
 
     //plist
 

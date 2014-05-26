@@ -1,11 +1,17 @@
-var g_GameZOrder = {
+var g_GameZOrder =
+{
     bg: 0,
-    ui: 1,
 
-    char: 10,
-    charteam:11,
+    map:10,
+    mapitem:11,
 
-    font: 100 }
+    ui: 100,
+
+    char: 1000,
+    charteam:1001,
+
+    font: 10000
+}
 
 var MyGameLayer = cc.Layer.extend({
     bgsprite: null,
@@ -98,6 +104,9 @@ var MyLayer = cc.Layer.extend({
         layer.createMap();
         layer.addChar( 0, 6 );
         layer.addCommandBar( 3, 8 );
+
+        layer.displayMoveRangeForChar();
+        layer.displayAttackRangeForChar();
 
         scene.addChild( layer );
         var transition = cc.TransitionProgressRadialCCW.create( 0.5,scene );

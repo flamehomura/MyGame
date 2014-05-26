@@ -9,26 +9,21 @@ var TEAM_BLUE = 0;
 var TEAM_RED = 1;
 var TEAM_YELLOW = 2;
 
-var CharSprite = cc.Sprite.extend({
-        _state:STATE_UNGRABBED,
-        _rect:null,
+var CharSprite = MapItemSprite.extend({
+        _state: STATE_UNGRABBED,
+        _rect: null,
 
         _teamid: -1,
+        _mapindex: -1,
 
-        ctor: function () {
+        _moverange: 4,
+        _attackrange: 2,
+
+        ctor: function ()
+        {
             this._super();
+            this.setItemType( MAP_ITEM_CHAR );
             this.initWithFile(s_MainChar);
-            cc.eventManager.addListener({
-                event: cc.EventListener.TOUCH_ONE_BY_ONE,
-                swallowTouches: true,
-                onTouchBegan: this.onTouchBegan,
-                onTouchMoved: this.onTouchMoved,
-                onTouchEnded: this.onTouchEnded
-            }, this);
-        },
-
-        rect:function () {
-            return cc.rect( -this._rect.width / 2, -this._rect.height / 2, this._rect.width, this._rect.height );
         },
 
         initWithTexture:function (aTexture) {
@@ -68,20 +63,44 @@ var CharSprite = cc.Sprite.extend({
             this.addChild( teamSprite, g_GameZOrder.charteam );
         },
 
-        containsTouchLocation:function (touch) {
-            var getPoint = touch.getLocation();
-            getPoint = this.convertToNodeSpace( getPoint );
+        getTeam: function()
+        {
+            return this._teamid;
+        },
 
-            var myRect = this.rect();
-            myRect.x = 0;
-            myRect.y = 0;
+        setMapIndex: function( index )
+        {
+            this._mapindex = index;
+        },
 
-            return cc.rectContainsPoint(myRect, getPoint);//this.convertTouchToNodeSpaceAR(touch));
+        getMapIndex: function()
+        {
+            return this._mapindex;
+        },
+
+        setMoveRange: function( range )
+        {
+            this._moverange = range;
+        },
+
+        getMoveRange: function()
+        {
+            return this._moverange;
+        },
+
+        setAttackRange: function( range )
+        {
+            this._attackrange = range;
+        },
+
+        getAttackRange: function()
+        {
+            return this._attackrange;
         },
 
         onTouchBegan: function (touch, event)
         {
-            var target = event.getCurrentTarget();
+/*            var target = event.getCurrentTarget();
             if (target._state != STATE_UNGRABBED)
             {
                 return false;
@@ -92,7 +111,7 @@ var CharSprite = cc.Sprite.extend({
             }
 
             target._state = STATE_GRABBED;
-            return true;
+            return true;*/
         },
 
         onTouchMoved: function (touch, event)
