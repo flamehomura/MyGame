@@ -10,10 +10,10 @@
 
     "jsList" : [
         "src/resource.js",
-        "src/map/MapSprite.js",
-        "src/map/MapItemSprite.js",
+        "src/Map/MapSprite.js",
+        "src/Map/MapItemSprite.js",
         "src/Map/MapLayer.js",
-        "src/char/CharSprite.js",
+        "src/Char/CharSprite.js",
         "src/Command/CommandLayer.js",
         "src/Command/CommandMenuItem.js",
         "src/myApp.js"
