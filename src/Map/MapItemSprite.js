@@ -94,6 +94,11 @@ var MapItemSprite = cc.Sprite.extend({
 
     setPathPoints: function( path )
     {
+        if( this._pathpoints.length > 0 && path.length < this._pathpoints.length )
+        {
+            this._pathpoints = [];
+        }
+
         for( var i = 0; i < path.length; ++i )
         {
             for( var j = 0; j < this._pathpoints.length; ++j )

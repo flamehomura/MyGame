@@ -172,7 +172,7 @@ var MapLayer = cc.Layer.extend({
         var row = this._curChar.getMapRow();
         var column = this._curChar.getMapColumn();
 
-        this.addMoveRangeFrom( row, column, true, this._curChar, MOVE_DIR_NONE );
+        this.addMoveRangeFrom( row, column, true, this._curChar );
     },
 
     displayAttackRangeForChar: function()
@@ -201,7 +201,7 @@ var MapLayer = cc.Layer.extend({
         }
     },
 
-    addMoveRangeFrom: function( row, column, firststep, char, dir )
+    addMoveRangeFrom: function( row, column, firststep, char )
     {
         if( !this.checkMapRow( row ) || !this.checkMapColumn( column ) )
         {
@@ -237,6 +237,7 @@ var MapLayer = cc.Layer.extend({
         else
         {
             this._curMovePath.push( new cc.Point( row, column ) );
+            mapsprite.getMapFlagItem().setPathPoints( this._curMovePath );
         }
 
         this._curCost += passcost;
@@ -248,58 +249,29 @@ var MapLayer = cc.Layer.extend({
         // 4 dir
         var tempcost = this._curCost;
         var temppathlength = this._curMovePath.length;
-        var tempdir = dir;
 
-        if( tempdir == MOVE_DIR_NONE )
-        {
-            dir = MOVE_DIR_FORWARD;
-        }
-        if( tempdir != MOVE_DIR_BACKWARD )
-        {
-            this.addMoveRangeFrom( row + 1, column, false, char, dir );
-        }
+        this.addMoveRangeFrom( row + 1, column, false, char );
 
         this._curCost = tempcost;
         if( this._curMovePath.length > temppathlength )
         {
             this._curMovePath.splice( temppathlength, this._curMovePath.length - temppathlength );
         }
-        if( tempdir == MOVE_DIR_NONE )
-        {
-            dir = MOVE_DIR_BACKWARD;
-        }
-        if( tempdir != MOVE_DIR_FORWARD )
-        {
-            this.addMoveRangeFrom( row - 1, column, false, char, dir );
-        }
+        this.addMoveRangeFrom( row - 1, column, false, char );
 
         this._curCost = tempcost;
         if( this._curMovePath.length > temppathlength )
         {
             this._curMovePath.splice( temppathlength, this._curMovePath.length - temppathlength );
         }
-        if( tempdir == MOVE_DIR_NONE )
-        {
-            dir = MOVE_DIR_RIGHT;
-        }
-        if( tempdir != MOVE_DIR_LEFT )
-        {
-            this.addMoveRangeFrom( row, column + 1, false, char, dir );
-        }
+        this.addMoveRangeFrom( row, column + 1, false, char );
 
         this._curCost = tempcost;
         if( this._curMovePath.length > temppathlength )
         {
             this._curMovePath.splice( temppathlength, this._curMovePath.length - temppathlength );
         }
-        if( tempdir == MOVE_DIR_NONE )
-        {
-            dir = MOVE_DIR_LEFT;
-        }
-        if( tempdir != MOVE_DIR_RIGHT )
-        {
-            this.addMoveRangeFrom( row, column - 1, false, char, dir );
-        }
+        this.addMoveRangeFrom( row, column - 1, false, char );
     },
 
     addMoveRangeAt: function( row, column )
