@@ -5,6 +5,14 @@
 var MAP_ITEM_WIDTH = 64
 var MAP_ITEM_HEIGHT = 64
 
+var MOVE_DURATION_PER_STEP = 0.5
+
+var MOVE_DIR_NONE = 0;
+var MOVE_DIR_FORWARD = 1;
+var MOVE_DIR_BACKWARD = 2;
+var MOVE_DIR_LEFT = 3;
+var MOVE_DIR_RIGHT = 4;
+
 var MapLayer = cc.Layer.extend({
     _row: 0,
     _column: 0,
@@ -23,6 +31,7 @@ var MapLayer = cc.Layer.extend({
     _curChar: null,
 
     _curMovePath: [],
+    _curMoveStep: 0,
     _curCost: 0,
 
     ctor: function( row, column )
@@ -163,7 +172,7 @@ var MapLayer = cc.Layer.extend({
         var row = this._curChar.getMapRow();
         var column = this._curChar.getMapColumn();
 
-        this.addMoveRangeFrom( row, column, true, this._curChar  );
+        this.addMoveRangeFrom( row, column, true, this._curChar, MOVE_DIR_NONE );
     },
 
     displayAttackRangeForChar: function()
@@ -192,7 +201,7 @@ var MapLayer = cc.Layer.extend({
         }
     },
 
-    addMoveRangeFrom: function( row, column, firststep, char )
+    addMoveRangeFrom: function( row, column, firststep, char, dir )
     {
         if( !this.checkMapRow( row ) || !this.checkMapColumn( column ) )
         {
@@ -225,6 +234,10 @@ var MapLayer = cc.Layer.extend({
                 this.addMoveRangeAt( row, column );
             }
         }
+        else
+        {
+            this._curMovePath.push( new cc.Point( row, column ) );
+        }
 
         this._curCost += passcost;
         if( this._curCost > char.getMoveRange() )
@@ -235,28 +248,58 @@ var MapLayer = cc.Layer.extend({
         // 4 dir
         var tempcost = this._curCost;
         var temppathlength = this._curMovePath.length;
-        this.addMoveRangeFrom( row + 1, column, false, char );
+        var tempdir = dir;
+
+        if( tempdir == MOVE_DIR_NONE )
+        {
+            dir = MOVE_DIR_FORWARD;
+        }
+        if( tempdir != MOVE_DIR_BACKWARD )
+        {
+            this.addMoveRangeFrom( row + 1, column, false, char, dir );
+        }
 
         this._curCost = tempcost;
         if( this._curMovePath.length > temppathlength )
         {
             this._curMovePath.splice( temppathlength, this._curMovePath.length - temppathlength );
         }
-        this.addMoveRangeFrom( row - 1, column, false, char );
+        if( tempdir == MOVE_DIR_NONE )
+        {
+            dir = MOVE_DIR_BACKWARD;
+        }
+        if( tempdir != MOVE_DIR_FORWARD )
+        {
+            this.addMoveRangeFrom( row - 1, column, false, char, dir );
+        }
 
         this._curCost = tempcost;
         if( this._curMovePath.length > temppathlength )
         {
             this._curMovePath.splice( temppathlength, this._curMovePath.length - temppathlength );
         }
-        this.addMoveRangeFrom( row, column + 1, false, char );
+        if( tempdir == MOVE_DIR_NONE )
+        {
+            dir = MOVE_DIR_RIGHT;
+        }
+        if( tempdir != MOVE_DIR_LEFT )
+        {
+            this.addMoveRangeFrom( row, column + 1, false, char, dir );
+        }
 
         this._curCost = tempcost;
         if( this._curMovePath.length > temppathlength )
         {
             this._curMovePath.splice( temppathlength, this._curMovePath.length - temppathlength );
         }
-        this.addMoveRangeFrom( row, column - 1, false, char );
+        if( tempdir == MOVE_DIR_NONE )
+        {
+            dir = MOVE_DIR_LEFT;
+        }
+        if( tempdir != MOVE_DIR_RIGHT )
+        {
+            this.addMoveRangeFrom( row, column - 1, false, char, dir );
+        }
     },
 
     addMoveRangeAt: function( row, column )
@@ -268,8 +311,9 @@ var MapLayer = cc.Layer.extend({
 
         if( this._mapMoveItemIndex >= this._mapMoveItems.length )
         {
-            var item = new MapItemSprite( s_MapMoveRange );
-            item.setItemType( MAP_ITEM_MOVEFLAG );
+            var item = new MapItemSprite();
+            item.initWithFile( s_MapMoveRange );
+            item.initWithItemType( MAP_ITEM_MOVEFLAG );
             item.setAnchorPoint( 0.5, 0.5 );
             item.initCallBack( this.onCharMove, this );
             this.addChild( item, g_GameZOrder.mapitem );
@@ -351,8 +395,9 @@ var MapLayer = cc.Layer.extend({
 
         if( this._mapAttackItemIndex >= this._mapAttackItems.length )
         {
-            var item = new MapItemSprite( s_MapAttackRange );
-            item.setItemType( MAP_ITEM_ATTACKFLAG );
+            var item = new MapItemSprite();
+            item.initWithFile( s_MapAttackRange );
+            item.initWithItemType( MAP_ITEM_ATTACKFLAG );
             item.setAnchorPoint( 0.5, 0.5 );
             this.addChild( item, g_GameZOrder.mapitem );
 
@@ -392,7 +437,9 @@ var MapLayer = cc.Layer.extend({
         }
         else
         {
-            var item = new MapItemSprite( s_MapSkillRange );
+            var item = new MapItemSprite();
+            item.initWithFile( s_MapSkillRange );
+            item.initWithItemType( MAP_ITEM_SKILLFLAG );
             item.setAnchorPoint( 0.5, 0.5 );
             item.setPosition( this.getMapItemPos( row, column ) );
             item.setMapPosition( row, column );
@@ -406,107 +453,29 @@ var MapLayer = cc.Layer.extend({
 
     onCharMove: function( moveTarget )
     {
-        //moveTarget.setVisible( false );
-
-        //this._curChar.stopAllActions();
-        //this._curChar.runAction( cc.MoveTo.create( 1, this.getMapItemPos( moveTarget.getMapRow(), moveTarget.getMapColumn() ) ) );
-        var temp = 0;
-        //temp.setPosition( 1, 3 );
-        cc.log( temp );
-        this.tempfunc( temp );
-        cc.log( temp );
-
-    },
-
-    tempfunc: function( temp )
-    {
-        temp = 3;
-    },
-
-    getMovePath: function( rowfrom, columnfrom, rowto, columnto )
-    {
-        _curMovePath = [];
-
-        var bRowPrior = true;
-        if( Math.abs( columnto - columnfrom ) > Math.abs( rowto - rowfrom ) )
+        if( moveTarget.getPathPoints().length > 0 )
         {
-            bRowPrior = false;
+            this._curMovePath = moveTarget.getPathPoints();
+            this._curMoveStep = 0;
+            this.schedule( this.onCharMoving, MOVE_DURATION_PER_STEP );
+            this.onCharMoving();
         }
-
-
     },
 
-    checkMovePath: function( row, column, rowgoal, columngoal, rowprior )
+    onCharMoving: function()
     {
-        if( this.checkMovePass( row, column ) )
+        var path = this._curMovePath[this._curMoveStep];
+
+        this._curChar.setRotationToPos( path.x, path.y );
+        this._curChar.stopAllActions();
+        this._curChar.runAction( cc.MoveTo.create( MOVE_DURATION_PER_STEP, this.getMapItemPos( path.x, path.y ) ) );
+        this._curChar.setMapPosition( path.x, path.y );
+
+        ++this._curMoveStep;
+        if( this._curMoveStep >= this._curMovePath.length )
         {
-            var pos = new cc.Point( row, column );
-            var prepos;
-            if( this._curMovePath.length > 0 )
-            {
-                prepos = this._curMovePath[this._curMovePath.length - 1];
-            }
-
-            if( this._curMovePath.length >= 2 )
-            {
-                if( cc.pointEqualToPoint( pos, this._curMovePath[this._curMovePath.length - 2] ) )
-                {
-                    this._curMovePath.pop();
-                }
-                else
-                {
-                    this._curMovePath.push( pos );
-                }
-            }
-            else
-            {
-                this._curMovePath.push( pos );
-            }
-
-            if( row == rowgoal && column == columngoal )
-            {
-                return true;
-            }
-
-            var rowdir = ( rowgoal - row ) / Math.abs( rowgoal - row );
-            var columedir = ( columngoal - column ) / Math.abs( columngoal - column );
-            if( rowprior )
-            {
-                pos.x = row + rowdir;
-                pos.y = column;
-                if( !cc.pointEqualToPoint( pos, prepos ) &&
-                    this.checkMovePath( row + rowdir, column, rowgoal, columngoal, rowprior ) )
-                {
-                    return true;
-                }
-
-                pos.x = row;
-                pos.y = column + columedir;
-                if( !cc.pointEqualToPoint( pos, prepos ) &&
-                    this.checkMovePath( row, column + columedir, rowgoal, columngoal, rowprior ) )
-                {
-                    return true;
-                }
-
-                pos.x = row;
-                pos.y = column - columedir;
-                if( !cc.pointEqualToPoint( pos, prepos ) &&
-                    this.checkMovePath( row, column - columedir, rowgoal, columngoal, rowprior ) )
-                {
-                    return true;
-                }
-
-                pos.x = row - rowdir;
-                pos.y = column;
-                if( !cc.pointEqualToPoint( pos, prepos ) &&
-                    this.checkMovePath( row - rowdir, column, rowgoal, columngoal, rowprior ) )
-                {
-                    return true;
-                }
-            }
+            this.unschedule( this.onCharMoving );
         }
-
-        return false;
     },
 
     checkMovePass: function( row, column )

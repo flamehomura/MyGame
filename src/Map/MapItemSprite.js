@@ -4,7 +4,8 @@
 
 var MAP_ITEM_MOVEFLAG = 0;
 var MAP_ITEM_ATTACKFLAG = 1;
-var MAP_ITEM_CHAR = 2;
+var MAP_ITEM_SKILLFLAG = 2;
+var MAP_ITEM_CHAR = 10;
 
 var MapItemSprite = cc.Sprite.extend({
     _maprow: -1,
@@ -15,6 +16,11 @@ var MapItemSprite = cc.Sprite.extend({
 
     _itemcallback: null,
     _itemcallbacktarget: null,
+
+/*    ctor: function()
+    {
+        this._pathpoints = new Array();
+    },*/
 
     rect:function ()
     {
@@ -59,9 +65,11 @@ var MapItemSprite = cc.Sprite.extend({
         return this._enabled;
     },
 
-    setItemType: function( type )
+    initWithItemType: function( type )
     {
         this._itemtype = type;
+
+        this._pathpoints = new Array();
     },
 
     getItemType: function()
@@ -86,7 +94,17 @@ var MapItemSprite = cc.Sprite.extend({
 
     setPathPoints: function( path )
     {
-        this._pathpoints = path;
+        for( var i = 0; i < path.length; ++i )
+        {
+            for( var j = 0; j < this._pathpoints.length; ++j )
+            {
+                if( this._pathpoints[j].x == path[i].x && this._pathpoints[j].y == path[i].y )
+                {
+                    this._pathpoints.splice( j, this._pathpoints.length - j );
+                }
+            }
+            this._pathpoints.push( path[i] );
+        }
     },
 
     getPathPoints: function()
