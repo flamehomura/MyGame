@@ -9,6 +9,11 @@ var TEAM_BLUE = 0;
 var TEAM_RED = 1;
 var TEAM_YELLOW = 2;
 
+var ROTATION_UP = 0;
+var ROTATION_DOWN = 180;
+var ROTATION_LEFT = 90;
+var ROTATION_RIGHT = 270;
+
 var CharSprite = MapItemSprite.extend({
         _state: STATE_UNGRABBED,
         _rect: null,
@@ -17,13 +22,12 @@ var CharSprite = MapItemSprite.extend({
         _mapindex: -1,
 
         _moverange: 4,
-        _attackrange: 2,
+        _attackrange: 1,
 
         ctor: function ()
         {
             this._super();
             this.initWithItemType( MAP_ITEM_CHAR );
-            this.initWithFile(s_MainChar);
         },
 
         initWithTexture:function (aTexture) {
@@ -45,14 +49,17 @@ var CharSprite = MapItemSprite.extend({
             var teamImage;
             switch( this._teamid )
             {
-                case TEAM_RED:
-                    teamImage = s_CharRedTeam;
-                    break;
                 case TEAM_BLUE:
                     teamImage = s_CharBlueTeam;
+                    this.setRotation( ROTATION_UP );
+                    break;
+                case TEAM_RED:
+                    teamImage = s_CharRedTeam;
+                    this.setRotation( ROTATION_DOWN );
                     break;
                 case TEAM_YELLOW:
                     teamImage = s_CharYellowTeam;
+                    break;
                 default:
                     return;
             }
@@ -72,19 +79,19 @@ var CharSprite = MapItemSprite.extend({
 
             if( deltarow < 0 )
             {
-                rot = 180;
+                rot = ROTATION_DOWN;
             }
             else if( deltarow > 0)
             {
-                rot = 0;
+                rot = ROTATION_UP;
             }
             else if( deltacolumn > 0 )
             {
-                rot = 90;
+                rot = ROTATION_LEFT;
             }
             else if( deltacolumn < 0 )
             {
-                rot = 270;
+                rot = ROTATION_RIGHT;
             }
 
             this.setRotation( rot );
@@ -123,42 +130,18 @@ var CharSprite = MapItemSprite.extend({
         getAttackRange: function()
         {
             return this._attackrange;
-        },
-
-        onTouchBegan: function (touch, event)
-        {
-/*            var target = event.getCurrentTarget();
-            if (target._state != STATE_UNGRABBED)
-            {
-                return false;
-            }
-            if (!target.containsTouchLocation(touch))
-            {
-                return false;
-            }
-
-            target._state = STATE_GRABBED;
-            return true;*/
-        },
-
-        onTouchMoved: function (touch, event)
-        {
-/*            var target = event.getCurrentTarget();
-
-            cc.assert(target._state == STATE_GRABBED, "Paddle - Unexpected state!");
-
-            var touchPoint = touch.getLocation();
-            //touchPoint = cc.director.convertToGL( touchPoint );
-
-            target.x = touchPoint.x;
-            target.y = touchPoint.y;*/
-        },
-
-        onTouchEnded: function (touch, event)
-        {
-            var target = event.getCurrentTarget();
-            cc.assert(target._state == STATE_GRABBED, "Paddle - Unexpected state!");
-            target._state = STATE_UNGRABBED;
         }
+
+//        onTouchBegan: function (touch, event)
+//        {
+//        },
+//
+//        onTouchMoved: function (touch, event)
+//        {
+//        },
+//
+//        onTouchEnded: function (touch, event)
+//        {
+//        }
     }
 )

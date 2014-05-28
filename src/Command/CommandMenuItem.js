@@ -51,7 +51,6 @@ var CommandMenuItem = cc.MenuItemLabel.extend({
     {
         if( this._enabled )
         {
-            this.stopAllActions();
             cc.MenuItem.prototype.activate.call(this);
         }
     }

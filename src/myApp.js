@@ -102,11 +102,7 @@ var MyLayer = cc.Layer.extend({
         var layer = new MapLayer( 8, 12 );
         layer.setPosition( size.width / 2, size.height / 2 );
         layer.createMap();
-        layer.addChar( 0, 6 );
-        layer.addCommandBar( 3, 8 );
-
-        layer.displayMoveRangeForChar();
-        layer.displayAttackRangeForChar();
+        layer.initChars();
 
         scene.addChild( layer );
         var transition = cc.TransitionProgressRadialCCW.create( 0.5,scene );

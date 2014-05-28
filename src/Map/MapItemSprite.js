@@ -27,12 +27,14 @@ var MapItemSprite = cc.Sprite.extend({
         return cc.rect( 0, 0, this._rect.width, this._rect.height );
     },
 
-    clear: function()
+    clearinfo: function()
     {
-        _maprow = -1;
-        _mapcolumn = -1;
-        _enabled = false;
-        _pathpoints = [];
+        this._maprow = -1;
+        this._mapcolumn = -1;
+        this._enabled = false;
+        this._pathpoints = [];
+        this.setVisible( false );
+        this.setNodeDirty();
     },
 
     setMapPosition: function( row, column )
@@ -158,6 +160,16 @@ var MapItemSprite = cc.Sprite.extend({
     {
         var target = event.getCurrentTarget();
         if( !target.isVisible() )
+        {
+            return false;
+        }
+
+        if( !target.isEnabled() )
+        {
+            return false;
+        }
+
+        if( !target.parent.isEnabled() )
         {
             return false;
         }

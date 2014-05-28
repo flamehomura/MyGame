@@ -6,6 +6,7 @@ var s_StartBtn = "start.png"
 var s_DemoBackGround = "demobg.jpg"
 
 var s_MainChar = "char/1.png"
+var s_MainCharEnemy = "char/2.png"
 var s_CharBlueTeam = "char/blue.png"
 var s_CharRedTeam = "char/red.png"
 var s_CharYellowTeam = "char/yellow.png"
@@ -25,6 +26,7 @@ var g_resources = [
     //s_CloseNormal,
     //s_CloseSelected
     s_MainChar,
+    s_MainCharEnemy,
     s_CharBlueTeam,
     s_CharRedTeam,
     s_CharYellowTeam,

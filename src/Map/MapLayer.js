@@ -13,9 +13,14 @@ var MOVE_DIR_BACKWARD = 2;
 var MOVE_DIR_LEFT = 3;
 var MOVE_DIR_RIGHT = 4;
 
+var COMMANDMENU_WIDTH = 2;
+var COMMANDMENU_HEIGHT = 3;
+
 var MapLayer = cc.Layer.extend({
     _row: 0,
     _column: 0,
+
+    _enabled: false,
 
     _mapItems: [],
     _mapChars: [],
@@ -29,8 +34,10 @@ var MapLayer = cc.Layer.extend({
     _mapSkillItemIndex: 0,
 
     _curChar: null,
+    _commandMenu: null,
 
     _curMovePath: [],
+    _curMovingPath: [],
     _curMoveStep: 0,
     _curCost: 0,
 
@@ -40,6 +47,16 @@ var MapLayer = cc.Layer.extend({
 
         this._row = row;
         this._column = column;
+    },
+
+    setEnabled: function( enabled )
+    {
+        this._enabled = enabled;
+    },
+
+    isEnabled: function()
+    {
+        return this._enabled;
     },
 
     createMap: function()
@@ -66,12 +83,14 @@ var MapLayer = cc.Layer.extend({
                 item.setMapPosition( iRow, iColumn );
                 item.setType( MAP_OBJ_GRASS );
 
-                if( iRow == 2 )
-                {
-                    item.setType( MAP_OBJ_FOREST );
-                }
+//                if( iRow == 2 )
+//                {
+//                    item.setType( MAP_OBJ_FOREST );
+//                }
             }
         }
+
+        this.setEnabled( true );
     },
 
     getMapSprite: function( row, column )
@@ -97,27 +116,49 @@ var MapLayer = cc.Layer.extend({
         return column >= 0 && column < this._column;
     },
 
-    addChar: function( row, column )
+    initChars: function()
     {
+        var char1 = new CharSprite();
+        char1.initWithFile( s_MainChar );
+        char1.setAnchorPoint( 0.5, 0.5 );
+        char1.setTeam( 0 );
+        char1.initCallBack( this.onCharSelected, this );
+        this._mapChars.push( char1 );
+        char1.setMapIndex( this._mapChars.length - 1 );
+
+        var char2 = new CharSprite();
+        char2.initWithFile( s_MainCharEnemy );
+        char2.setAnchorPoint( 0.5, 0.5 );
+        char2.setTeam( 1 );
+        char2.initCallBack( this.onCharSelected, this );
+        this._mapChars.push( char2 );
+        char2.setMapIndex( this._mapChars.length - 1 );
+
+        this.addChar( 0, 0, 6 );
+        this.addChar( 1, 7, 5 );
+    },
+
+    addChar: function( charindex, row, column )
+    {
+        if( charindex >= this._mapChars.length )
+        {
+            return;
+        }
+
         if( !this.checkMapRow( row ) || !( this.checkMapColumn( column ) ) )
         {
             return;
         }
 
-        var char = new CharSprite();
-        char.setAnchorPoint( 0.5, 0.5 );
+        var char = this._mapChars[charindex];
         char.setPosition( this.getMapItemPos( row, column ) );
+        char.setEnabled( true );
         this.addChild( char, g_GameZOrder.char );
-
-        this._mapChars.push( char );
-        char.setMapIndex( this._mapChars.length - 1 );
-        char.setTeam( 0 );
-
         this.setCharMapPosition( char, row, column );
-        this._curChar = char;
+        //this._curChar = char;
     },
 
-    setCharMapPosition: function( char, row, column )
+    clearCharMapPosition: function( char )
     {
         var prerow , precolumn;
 
@@ -129,8 +170,11 @@ var MapLayer = cc.Layer.extend({
         {
             mapsprite.setMapCharItem( null );
         }
+    },
 
-        mapsprite = this.getMapSprite( row, column );
+    setCharMapPosition: function( char, row, column )
+    {
+        var mapsprite = this.getMapSprite( row, column );
         if( mapsprite )
         {
             mapsprite.setMapCharItem( char );
@@ -139,26 +183,30 @@ var MapLayer = cc.Layer.extend({
         char.setMapPosition( row, column );
     },
 
-    addCommandBar: function( row, column )
+    addCommandMenu: function( row, column )
     {
         if( !this.checkMapRow( row ) || !( this.checkMapColumn( column ) ) )
         {
             return;
         }
 
-        var cmd = new CommandLayer();
-        cmd.setPosition( this.getMapItemPos( row, column ) );
-        this.addChild( cmd, g_GameZOrder.ui );
+        if( this._commandMenu == null )
+        {
+            this._commandMenu = new CommandLayer();
+            this.addChild( this._commandMenu, g_GameZOrder.ui );
 
-        for( var i = 0; i < cmdMenuItems.length; ++i ){
-            var tempMenu = new CommandMenuItem(
-                cmdMenuItems[i].title,
-                cmdMenuItems[i].command,
-                this
-            )
+            for( var i = 0; i < cmdMenuItems.length; ++i ){
+                var tempMenu = new CommandMenuItem(
+                    cmdMenuItems[i].title,
+                    cmdMenuItems[i].command,
+                    this
+                )
 
-            cmd.addCommandItem( tempMenu );
+                this._commandMenu.addCommandItem( tempMenu );
+            }
         }
+        this._commandMenu.setVisible( true );
+        this._commandMenu.setPosition( this.getMapItemPos( row, column ) );
     },
 
     displayMoveRangeForChar: function()
@@ -171,6 +219,7 @@ var MapLayer = cc.Layer.extend({
         this._curCost = 0;
         var row = this._curChar.getMapRow();
         var column = this._curChar.getMapColumn();
+        this._curMovePath = [];
 
         this.addMoveRangeFrom( row, column, true, this._curChar );
     },
@@ -186,6 +235,11 @@ var MapLayer = cc.Layer.extend({
         {
             for( var itemidx = 0; itemidx < this._mapMoveItems.length; ++itemidx )
             {
+                if( !this._mapMoveItems[itemidx].isVisible() )
+                {
+                    continue;
+                }
+
                 this._curCost = 0;
                 this.addAttackRangeFrom( this._mapMoveItems[itemidx].getMapRow(),
                     this._mapMoveItems[itemidx].getMapColumn(),
@@ -423,12 +477,99 @@ var MapLayer = cc.Layer.extend({
         ++this._mapSkillItemIndex;
     },
 
+    onCharSelected: function( targetchar )
+    {
+        if( targetchar instanceof CharSprite )
+        {
+            this.clearMapFlags();
+            this._curChar = targetchar;
+
+            this.displayCommandMenuForChar();
+//            this.displayMoveRangeForChar();
+//            this.displayAttackRangeForChar();
+        }
+    },
+
+    displayCommandMenuForChar: function()
+    {
+        if( !this._curChar )
+        {
+            return;
+        }
+
+        var charrow = this._curChar.getMapRow();
+        var charcolumn = this._curChar.getMapColumn();
+
+        var cmdrow, cmdcolumn;
+
+        if( this._row - charrow - 1 >= COMMANDMENU_HEIGHT )
+        {
+            cmdrow = charrow + COMMANDMENU_HEIGHT;
+        }
+        else
+        {
+            cmdrow = charrow;
+        }
+
+        if( this._column - charcolumn - 1 >= COMMANDMENU_WIDTH )
+        {
+            cmdcolumn = charcolumn + COMMANDMENU_WIDTH;
+        }
+        else
+        {
+            cmdcolumn = charcolumn - COMMANDMENU_WIDTH;
+        }
+
+        if( this.checkMapRow( cmdrow ) && this.checkMapColumn( cmdcolumn ) )
+        {
+            this.addCommandMenu( cmdrow, cmdcolumn );
+        }
+    },
+
+    clearMapFlags: function()
+    {
+        for( var i = 0; i < this._mapMoveItems.length; ++i )
+        {
+            var row = this._mapMoveItems[i].getMapRow();
+            var column = this._mapMoveItems[i].getMapColumn();
+
+            this._mapMoveItems[i].clearinfo();
+
+            var mapsprite = this.getMapSprite( row, column );
+            if( mapsprite )
+            {
+                mapsprite.setMapFlagItem( null );
+            }
+        }
+        this._mapMoveItemIndex = 0;
+
+        for( var i = 0; i < this._mapAttackItems.length; ++i )
+        {
+            var mapsprite = this.getMapSprite( this._mapAttackItems[i].getMapRow(), this._mapAttackItems[i].getMapColumn() );
+            if( mapsprite )
+            {
+                mapsprite.setMapFlagItem( null );
+            }
+            this._mapAttackItems[i].clearinfo();
+        }
+        this._mapAttackItemIndex = 0;
+    },
+
     onCharMove: function( moveTarget )
     {
         if( moveTarget.getPathPoints().length > 0 )
         {
-            this._curMovePath = moveTarget.getPathPoints();
+            this._curMovingPath = [];
+            var tempPath = moveTarget.getPathPoints();
+            for( var i = 0; i < tempPath.length; ++i )
+            {
+                this._curMovingPath.push( tempPath[i] );
+            }
             this._curMoveStep = 0;
+
+            this.setEnabled( false );
+            this.clearMapFlags();
+            this.clearCharMapPosition( this._curChar );
             this.schedule( this.onCharMoving, MOVE_DURATION_PER_STEP );
             this.onCharMoving();
         }
@@ -436,7 +577,7 @@ var MapLayer = cc.Layer.extend({
 
     onCharMoving: function()
     {
-        var path = this._curMovePath[this._curMoveStep];
+        var path = this._curMovingPath[this._curMoveStep];
 
         this._curChar.setRotationToPos( path.x, path.y );
         this._curChar.stopAllActions();
@@ -444,9 +585,13 @@ var MapLayer = cc.Layer.extend({
         this._curChar.setMapPosition( path.x, path.y );
 
         ++this._curMoveStep;
-        if( this._curMoveStep >= this._curMovePath.length )
+        if( this._curMoveStep >= this._curMovingPath.length )
         {
             this.unschedule( this.onCharMoving );
+            this._curMovingPath = [];
+
+            this.setCharMapPosition( this._curChar, path.x, path.y );
+            this.setEnabled( true );
         }
     },
 
@@ -468,28 +613,58 @@ var MapLayer = cc.Layer.extend({
         pos.y = this._mapItemStartY + MAP_ITEM_HEIGHT * row;
 
         return pos;
+    },
+
+    onMoveCmd: function()
+    {
+        this._commandMenu.setVisible( false );
+        if( this._curChar )
+        {
+            this.displayMoveRangeForChar();
+            //this.displayAttackRangeForChar();
+        }
+    },
+
+    onAttackCmd: function()
+    {
+        this._commandMenu.setVisible( false );
+    },
+
+    onDefenceCmd: function()
+    {
+        this._commandMenu.setVisible( false );
+    },
+
+    onSkillCmd: function()
+    {
+        this._commandMenu.setVisible( false );
+    },
+
+    onItemCmd: function()
+    {
+        this._commandMenu.setVisible( false );
     }
 })
 
 var cmdMenuItems = [
     {
         title:"移动",
-        command:function(){ cc.log( "Move Cmd" ) }
+        command:"onMoveCmd"
     },
     {
         title:"攻击",
-        command:function(){ cc.log( "Attack Cmd" ) }
+        command:"onMoveCmd"
     },
     {
         title:"防御",
-        command:function(){ cc.log( "Defence Cmd" ) }
+        command:"onMoveCmd"
     },
     {
         title:"特技",
-        command:function(){ cc.log( "Skill Cmd" ) }
+        command:"onMoveCmd"
     },
     {
         title:"道具",
-        command:function(){ cc.log( "Item Cmd" ) }
+        command:"onMoveCmd"
     }
 ]
