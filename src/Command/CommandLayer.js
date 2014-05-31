@@ -10,6 +10,7 @@ var CommandLayer = cc.Layer.extend({
     _selectedItem: null,
     _state: -1,
     enabled: false,
+    _conmmanditems: [],
 
     ctor: function () {
         this._super();
@@ -64,11 +65,30 @@ var CommandLayer = cc.Layer.extend({
         cmditem.setAnchorPoint( 0.5, 0.5 );
         cmditem.setPosition( 0, this._curItemHeight - cmditem.height / 2 );
         this.addChild( cmditem, g_GameZOrder.ui );
+        this._conmmanditems.push( cmditem );
 
         this._curItemHeight -= cmditem.height;
         this._tailSprite.setPosition( this._tailSprite.getPosition().x, this._curItemHeight );
 
         this.setEnabled( true );
+    },
+
+    getCommandItem: function( itemidx )
+    {
+        if( itemidx >= 0 && itemidx < this._conmmanditems.length )
+        {
+            return this._conmmanditems[itemidx];
+        }
+
+        return null;
+    },
+
+    setCommandItemEnabled: function( itemidx, enabled )
+    {
+        if( itemidx >= 0 && itemidx < this._conmmanditems.length  )
+        {
+            this._conmmanditems[itemidx].setEnabled( enabled );
+        }
     },
 
     _onTouchBegan: function (touch, event)

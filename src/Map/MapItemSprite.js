@@ -22,6 +22,22 @@ var MapItemSprite = cc.Sprite.extend({
         this._pathpoints = new Array();
     },*/
 
+    initWithTexture:function ( aTexture )
+    {
+        this._super(aTexture)
+        if (aTexture instanceof cc.Texture2D)
+        {
+            this._rect = cc.rect(0, 0, aTexture.width, aTexture.height);
+        } else if ((aTexture instanceof HTMLImageElement) || (aTexture instanceof HTMLCanvasElement))
+        {
+            this._rect = cc.rect(0, 0, aTexture.width, aTexture.height);
+        }
+
+        this.width = this._rect.width;
+        this.height = this._rect.height;
+        return true;
+    },
+
     rect:function ()
     {
         return cc.rect( 0, 0, this._rect.width, this._rect.height );
@@ -91,7 +107,7 @@ var MapItemSprite = cc.Sprite.extend({
 
     getMapPosition: function()
     {
-        return new cc.Point( this._maprow, this._mapcolumn );
+        return new cc.p( this._maprow, this._mapcolumn );
     },
 
     setPathPoints: function( path )
@@ -156,6 +172,24 @@ var MapItemSprite = cc.Sprite.extend({
         return cc.rectContainsPoint( myRect, getPoint );
     },
 
+    touchStateCheck: function()
+    {
+        if( this._itemtype == MAP_ITEM_ATTACKFLAG )
+        {
+            var map = this.parent;
+            var mapscript = map.getMapSprite( this._maprow, this._mapcolumn );
+            if( mapscript )
+            {
+                var char = mapscript.getMapCharItem();
+                if( !char )
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    },
+
     onTouchBegan: function( touch, event )
     {
         var target = event.getCurrentTarget();
@@ -175,6 +209,11 @@ var MapItemSprite = cc.Sprite.extend({
         }
 
         if( !target.containsTouchLocation( touch ) )
+        {
+            return false;
+        }
+
+        if( !target.touchStateCheck() )
         {
             return false;
         }

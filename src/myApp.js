@@ -9,6 +9,9 @@ var g_GameZOrder =
 
     char: 1000,
     charteam:1001,
+    actionchar: 2000,
+
+    menu: 5000,
 
     font: 10000
 }
@@ -103,6 +106,7 @@ var MyLayer = cc.Layer.extend({
         layer.setPosition( size.width / 2, size.height / 2 );
         layer.createMap();
         layer.initChars();
+        layer.gameStart();
 
         scene.addChild( layer );
         var transition = cc.TransitionProgressRadialCCW.create( 0.5,scene );

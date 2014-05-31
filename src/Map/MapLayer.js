@@ -5,16 +5,17 @@
 var MAP_ITEM_WIDTH = 64
 var MAP_ITEM_HEIGHT = 64
 
-var MOVE_DURATION_PER_STEP = 0.5
-
-var MOVE_DIR_NONE = 0;
-var MOVE_DIR_FORWARD = 1;
-var MOVE_DIR_BACKWARD = 2;
-var MOVE_DIR_LEFT = 3;
-var MOVE_DIR_RIGHT = 4;
+var MOVE_DURATION_PER_STEP = 0.3
 
 var COMMANDMENU_WIDTH = 2;
 var COMMANDMENU_HEIGHT = 3;
+
+var COMMAND_MOVE = 0;
+var COMMAND_ATTACK = 1;
+var COMMAND_DEFENCE = 2;
+var COMMAND_SKILL = 3;
+var COMMAND_ITEM = 4;
+var COMMAND_IGNORE = 5;
 
 var MapLayer = cc.Layer.extend({
     _row: 0,
@@ -41,12 +42,19 @@ var MapLayer = cc.Layer.extend({
     _curMoveStep: 0,
     _curCost: 0,
 
+    _curActionCounter: 0,
+
     ctor: function( row, column )
     {
         cc.Layer.prototype.ctor.call( this );
 
         this._row = row;
         this._column = column;
+    },
+
+    gameStart: function()
+    {
+        this.getNextChar();
     },
 
     setEnabled: function( enabled )
@@ -118,24 +126,31 @@ var MapLayer = cc.Layer.extend({
 
     initChars: function()
     {
-        var char1 = new CharSprite();
-        char1.initWithFile( s_MainChar );
-        char1.setAnchorPoint( 0.5, 0.5 );
-        char1.setTeam( 0 );
-        char1.initCallBack( this.onCharSelected, this );
-        this._mapChars.push( char1 );
-        char1.setMapIndex( this._mapChars.length - 1 );
+        for( var i = 0; i < g_CharList.length; ++i )
+        {
+            var char = new CharSprite();
+            char.initWithFile( g_CharList[i].imagefile );
+            char.setAnchorPoint( 0.5, 0.5 );
+            char.setTeam( g_CharList[i].team );
+            char.initCallBack( this.onCharSelected, this );
+            char.setMoveRange( g_CharList[i].moverange );
+            char.setAttackRange( g_CharList[i].attackrange );
 
-        var char2 = new CharSprite();
-        char2.initWithFile( s_MainCharEnemy );
-        char2.setAnchorPoint( 0.5, 0.5 );
-        char2.setTeam( 1 );
-        char2.initCallBack( this.onCharSelected, this );
-        this._mapChars.push( char2 );
-        char2.setMapIndex( this._mapChars.length - 1 );
+            char.setHealthPoint( g_CharList[i].health );
+            char.setMagicPoint( g_CharList[i].magic );
+            char.setFirePoint( g_CharList[i].fire );
+            char.setEarthPoint( g_CharList[i].earth );
+            char.setWindPoint( g_CharList[i].wind );
+            char.setWaterPoint( g_CharList[i].water );
+            char.setThunderPoint( g_CharList[i].thunder );
 
-        this.addChar( 0, 0, 6 );
-        this.addChar( 1, 7, 5 );
+            char.setEnabled( false );
+
+            this._mapChars.push( char );
+            char.setMapIndex( this._mapChars.length - 1 );
+
+            this.addChar( char.getMapIndex(), g_CharList[i].posrow, g_CharList[i].poscolumn );
+        }
     },
 
     addChar: function( charindex, row, column )
@@ -152,10 +167,62 @@ var MapLayer = cc.Layer.extend({
 
         var char = this._mapChars[charindex];
         char.setPosition( this.getMapItemPos( row, column ) );
-        char.setEnabled( true );
         this.addChild( char, g_GameZOrder.char );
         this.setCharMapPosition( char, row, column );
         //this._curChar = char;
+    },
+
+    getNextChar: function()
+    {
+        if( this._curChar )
+        {
+            this._curChar.setEnabled( false );
+        }
+
+        while( true )
+        {
+            var foundchar = false;
+            ++this._curActionCounter;
+
+            for( var i = 0; i < this._mapChars.length; ++i )
+            {
+                if( this._curActionCounter % this._mapChars[i].getSpeedValue() == 0 )
+                {
+                    this._curChar = this._mapChars[i];
+                    cc.log( "Current Char " + this._curChar.getMapIndex() );
+                    foundchar = true;
+                    break;
+                }
+            }
+
+            if( foundchar )
+            {
+                this.turnStart();
+                break;
+            }
+        }
+    },
+
+    turnStart: function()
+    {
+        this._curChar.setEnabled( true );
+
+        if( this._curChar.getTeam() != 0 )
+        {
+            this.onIgnoreCmd();
+        }
+        else
+        {
+            this.clearMapFlags();
+            this.initCommandMenu( this._curChar );
+            this.displayCommandMenuForChar();
+        }
+    },
+
+    turnEnd: function()
+    {
+        this._curChar.setActionState( ACTION_INIT );
+        this.getNextChar();
     },
 
     clearCharMapPosition: function( char )
@@ -193,20 +260,41 @@ var MapLayer = cc.Layer.extend({
         if( this._commandMenu == null )
         {
             this._commandMenu = new CommandLayer();
-            this.addChild( this._commandMenu, g_GameZOrder.ui );
+            this.addChild( this._commandMenu, g_GameZOrder.menu );
 
-            for( var i = 0; i < cmdMenuItems.length; ++i ){
+            for( var i = 0; i < cmdMenuItems.length; ++i )
+            {
                 var tempMenu = new CommandMenuItem(
                     cmdMenuItems[i].title,
                     cmdMenuItems[i].command,
                     this
-                )
+                );
+                tempMenu.setEnabled( cmdMenuItems[i].enabled );
 
                 this._commandMenu.addCommandItem( tempMenu );
             }
         }
         this._commandMenu.setVisible( true );
         this._commandMenu.setPosition( this.getMapItemPos( row, column ) );
+    },
+
+    initCommandMenu: function( char )
+    {
+        if( this._commandMenu != null )
+        {
+            for( var i = 0; i < cmdMenuItems.length; ++i )
+            {
+                this._commandMenu.setCommandItemEnabled( i, cmdMenuItems[i].enabled );
+            }
+        }
+
+        if( char )
+        {
+            if( char.getActionState() == ACTION_MOVED )
+            {
+                this._commandMenu.setCommandItemEnabled( COMMAND_MOVE, false );
+            }
+        }
     },
 
     displayMoveRangeForChar: function()
@@ -248,11 +336,8 @@ var MapLayer = cc.Layer.extend({
                     this._mapMoveItems[itemidx] );
             }
         }
-        else
-        {
-            this._curCost = 0;
-            this.addAttackRangeFrom( this._curChar.getMapRow(), this._curChar.getMapColumn(), true, this._curChar, null );
-        }
+        this._curCost = 0;
+        this.addAttackRangeFrom( this._curChar.getMapRow(), this._curChar.getMapColumn(), true, this._curChar, null );
     },
 
     addMoveRangeFrom: function( row, column, firststep, char )
@@ -285,7 +370,11 @@ var MapLayer = cc.Layer.extend({
             if( row != this._curChar.getMapRow() || column != this._curChar.getMapColumn() )
             {
                 this._curMovePath.push( new cc.Point( row, column ) );
-                this.addMoveRangeAt( row, column );
+
+                if( !anotherchar )
+                {
+                    this.addMoveRangeAt( row, column );
+                }
             }
         }
         else
@@ -377,7 +466,7 @@ var MapLayer = cc.Layer.extend({
         }
 
         var anotherchar = mapsprite.getMapCharItem();
-        if( anotherchar && anotherchar.getTeam() == char.getTeam() )
+        if( anotherchar && anotherchar.getTeam() == char.getTeam() && anotherchar != char )
         {
             return;
         }
@@ -425,6 +514,7 @@ var MapLayer = cc.Layer.extend({
             item.initWithFile( s_MapAttackRange );
             item.initWithItemType( MAP_ITEM_ATTACKFLAG );
             item.setAnchorPoint( 0.5, 0.5 );
+            item.initCallBack( this.onCharAttack, this );
             this.addChild( item, g_GameZOrder.mapitem );
 
             this._mapAttackItems.push( item );
@@ -482,11 +572,9 @@ var MapLayer = cc.Layer.extend({
         if( targetchar instanceof CharSprite )
         {
             this.clearMapFlags();
-            this._curChar = targetchar;
 
+            this.initCommandMenu( this._curChar );
             this.displayCommandMenuForChar();
-//            this.displayMoveRangeForChar();
-//            this.displayAttackRangeForChar();
         }
     },
 
@@ -572,6 +660,7 @@ var MapLayer = cc.Layer.extend({
             this.clearCharMapPosition( this._curChar );
             this.schedule( this.onCharMoving, MOVE_DURATION_PER_STEP );
             this.onCharMoving();
+            this._commandMenu.setCommandItemEnabled( COMMAND_MOVE, false );
         }
     },
 
@@ -588,16 +677,87 @@ var MapLayer = cc.Layer.extend({
         if( this._curMoveStep >= this._curMovingPath.length )
         {
             this.unschedule( this.onCharMoving );
-            this._curMovingPath = [];
-
-            this.setCharMapPosition( this._curChar, path.x, path.y );
-            this.setEnabled( true );
+            this.schedule( this.onCharMoveEnd, MOVE_DURATION_PER_STEP );
         }
     },
 
-    checkMovePass: function( row, column )
+    onCharMoveEnd: function()
     {
-        return true;
+        this.unschedule( this.onCharMoveEnd );
+        this._curMovingPath = [];
+
+        this.setCharMapPosition( this._curChar, this._curChar.getMapRow(), this._curChar.getMapColumn() );
+        this.setEnabled( true );
+
+        this._curChar.setActionState( ACTION_MOVED );
+        this.displayCommandMenuForChar();
+    },
+
+    onCharAttack: function( attackTarget )
+    {
+        // TODO: go to attack
+        // ....
+        if( attackTarget != null )
+        {
+            var row = attackTarget.getMapRow();
+            var column = attackTarget.getMapColumn();
+
+            var mapsprite = this.getMapSprite( row, column );
+            if( mapsprite )
+            {
+                var enemychar = mapsprite.getMapCharItem();
+                if( enemychar )
+                {
+                    this._curChar.setRotationToPos( enemychar.getMapRow(), enemychar.getMapColumn() );
+                    enemychar.setRotationToPos( this._curChar.getMapRow(), this._curChar.getMapColumn() );
+                    this.onCharAttacking( enemychar );
+                }
+            }
+            this.clearMapFlags();
+        }
+    },
+
+    onCharAttacking: function( enemy )
+    {
+        cc.log( "CharAttacking!" );
+        // attack action
+        var attackPos = this._curChar.getPosition();
+        var rotPos = this._curChar.getRotationPoint();
+        attackPos.x += rotPos.x * this._curChar.width * 0.5;
+        attackPos.y += rotPos.y * this._curChar.height * 0.5;
+
+        var action = cc.Sequence.create(
+            cc.MoveTo.create( 0.2, attackPos ),
+            cc.MoveTo.create( 0.2, this._curChar.getPosition() ),
+            cc.CallFunc.create( this.onCharAttackEnd, this )
+        );
+
+        this.setEnabled( false );
+        this.reorderChild( this._curChar, g_GameZOrder.actionchar );
+        this._curChar.runAction( action );
+
+        // injure action
+        if( enemy )
+        {
+            var enemyPos = enemy.getPosition();
+            var enemyRotPos = enemy.getRotationPoint();
+            enemyPos.x -= enemyRotPos.x * enemy.width * 0.25;
+            enemyPos.y -= enemyRotPos.y * enemy.height * 0.25;
+
+            var enemyaction = cc.Sequence.create(
+                cc.DelayTime.create( 0.1 ),
+                cc.MoveTo.create( 0.1, enemyPos ),
+                cc.MoveTo.create( 0.1, enemy.getPosition() )
+            );
+            enemy.runAction( enemyaction );
+        }
+    },
+
+    onCharAttackEnd: function()
+    {
+        this.reorderChild( this._curChar, g_GameZOrder.char );
+        this.setEnabled( true );
+        this.turnEnd();
     },
 
     getMapItemPos: function( row, column )
@@ -617,7 +777,11 @@ var MapLayer = cc.Layer.extend({
 
     onMoveCmd: function()
     {
-        this._commandMenu.setVisible( false );
+        if( this._commandMenu )
+        {
+            this._commandMenu.setVisible( false );
+        }
+
         if( this._curChar )
         {
             this.displayMoveRangeForChar();
@@ -627,44 +791,84 @@ var MapLayer = cc.Layer.extend({
 
     onAttackCmd: function()
     {
-        this._commandMenu.setVisible( false );
+        if( this._commandMenu )
+        {
+            this._commandMenu.setVisible( false );
+        }
+
+        if( this._curChar )
+        {
+            this.displayAttackRangeForChar();
+        }
     },
 
     onDefenceCmd: function()
     {
-        this._commandMenu.setVisible( false );
+        if( this._commandMenu )
+        {
+            this._commandMenu.setVisible( false );
+        }
+
+        this._curChar.setDefence();
+        this.turnEnd();
     },
 
     onSkillCmd: function()
     {
-        this._commandMenu.setVisible( false );
+        if( this._commandMenu )
+        {
+            this._commandMenu.setVisible( false );
+        }
     },
 
     onItemCmd: function()
     {
-        this._commandMenu.setVisible( false );
+        if( this._commandMenu )
+        {
+            this._commandMenu.setVisible( false );
+        }
+    },
+
+    onIgnoreCmd: function()
+    {
+        if( this._commandMenu )
+        {
+            this._commandMenu.setVisible( false );
+        }
+
+        this.turnEnd();
     }
 })
 
 var cmdMenuItems = [
     {
-        title:"移动",
-        command:"onMoveCmd"
+        title: "移动",
+        command: "onMoveCmd",
+        enabled: true
     },
     {
-        title:"攻击",
-        command:"onMoveCmd"
+        title: "攻击",
+        command: "onAttackCmd",
+        enabled: true
     },
     {
-        title:"防御",
-        command:"onMoveCmd"
+        title: "防御",
+        command: "onDefenceCmd",
+        enabled: true
     },
     {
-        title:"特技",
-        command:"onMoveCmd"
+        title: "特技",
+        command: "onSkillCmd",
+        enabled: false
     },
     {
-        title:"道具",
-        command:"onMoveCmd"
+        title: "道具",
+        command: "onItemCmd",
+        enabled: false
+    },
+    {
+        title: "待机",
+        command: "onIgnoreCmd",
+        enabled: true
     }
 ]

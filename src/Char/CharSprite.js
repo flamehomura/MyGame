@@ -11,12 +11,19 @@ var TEAM_YELLOW = 2;
 
 var ROTATION_UP = 0;
 var ROTATION_DOWN = 180;
-var ROTATION_LEFT = 90;
-var ROTATION_RIGHT = 270;
+var ROTATION_LEFT = 270;
+var ROTATION_RIGHT = 90;
+
+var ACTION_INIT = 0;
+var ACTION_MOVED = 1;
+var ACTION_ATTACKED = 2;
+
+var ACTION_SEQUENCE_MAX_VALUE = 10000;
 
 var CharSprite = MapItemSprite.extend({
         _state: STATE_UNGRABBED,
         _rect: null,
+        _rotangle: 0,
 
         _teamid: -1,
         _mapindex: -1,
@@ -24,22 +31,22 @@ var CharSprite = MapItemSprite.extend({
         _moverange: 4,
         _attackrange: 1,
 
+        _actionstate: ACTION_INIT,
+
+        _healthpiont: 0,
+        _magicpiont: 0,
+        _firepiont: 0,
+        _earthpiont: 0,
+        _windpiont: 0,
+        _waterpiont: 0,
+        _thunderpiont: 0,
+
+        _inDefence: false,
+
         ctor: function ()
         {
             this._super();
             this.initWithItemType( MAP_ITEM_CHAR );
-        },
-
-        initWithTexture:function (aTexture) {
-            if (this._super(aTexture)) {
-                this._state = STATE_UNGRABBED;
-            }
-            if (aTexture instanceof cc.Texture2D) {
-                this._rect = cc.rect(0, 0, aTexture.width, aTexture.height);
-            } else if ((aTexture instanceof HTMLImageElement) || (aTexture instanceof HTMLCanvasElement)) {
-                this._rect = cc.rect(0, 0, aTexture.width, aTexture.height);
-            }
-            return true;
         },
 
         setTeam: function( teamid )
@@ -75,26 +82,55 @@ var CharSprite = MapItemSprite.extend({
             var deltarow = row - this._maprow;
             var deltacolumn = column - this._mapcolumn;
 
-            var rot = 0;
+            if( Math.abs( deltarow ) >= Math.abs( deltacolumn ) )
+            {
+                if( deltarow < 0 )
+                {
+                    this._rotangle = ROTATION_DOWN;
+                }
+                else if( deltarow > 0)
+                {
+                    this._rotangle = ROTATION_UP;
+                }
+            }
+            else
+            {
+                if( deltacolumn > 0 )
+                {
+                    this._rotangle = ROTATION_RIGHT;
+                }
+                else if( deltacolumn < 0 )
+                {
+                    this._rotangle = ROTATION_LEFT;
+                }
+            }
 
-            if( deltarow < 0 )
+
+
+            this.setRotation( this._rotangle );
+        },
+
+        getRotationPoint: function()
+        {
+            var posX = 0, posY = 0;
+            if( this._rotangle == ROTATION_UP )
             {
-                rot = ROTATION_DOWN;
+                posY = 1;
             }
-            else if( deltarow > 0)
+            else if( this._rotangle == ROTATION_DOWN )
             {
-                rot = ROTATION_UP;
+                posY = -1;
             }
-            else if( deltacolumn > 0 )
+            else if( this._rotangle == ROTATION_LEFT )
             {
-                rot = ROTATION_LEFT;
+                posX = -1;
             }
-            else if( deltacolumn < 0 )
+            else if( this._rotangle == ROTATION_RIGHT )
             {
-                rot = ROTATION_RIGHT;
+                posX = 1;
             }
 
-            this.setRotation( rot );
+            return cc.p( posX, posY );
         },
 
         getTeam: function()
@@ -130,11 +166,148 @@ var CharSprite = MapItemSprite.extend({
         getAttackRange: function()
         {
             return this._attackrange;
+        },
+
+        setActionState: function( action )
+        {
+            this._actionstate = action;
+        },
+
+        getActionState: function()
+        {
+            return  this._actionstate;
+        },
+
+        setEnabled: function( enabled )
+        {
+            this._super( enabled );
+
+            if( this._enabled )
+            {
+                this.setColor( cc.color( 255, 255, 255, 255 ) );
+            }
+            else
+            {
+                if( !this._inDefence )
+                {
+                    this.setColor( cc.color( 127, 127, 127, 255 ) );
+                }
+            }
+        },
+
+        setDefence: function()
+        {
+            this.setColor( cc.color( 0, 127, 0, 255 ) );
+            this._inDefence = true;
+        },
+
+        touchStateCheck: function()
+        {
+            if( this._teamid != 0 )
+            {
+                return false;
+            }
+
+            var map = this.parent;
+
+            var mapscript = map.getMapSprite( this._maprow, this._mapcolumn );
+            if( mapscript )
+            {
+                var mapflag = mapscript.getMapFlagItem();
+                if( mapflag )
+                {
+                    if( mapflag.getItemType() == MAP_ITEM_ATTACKFLAG )
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        },
+
+        // battle value
+        setHealthPoint: function( point )
+        {
+            this._healthpiont = point;
+        },
+
+        getHealthPoint: function()
+        {
+            return this._healthpiont;
+        },
+
+        setMagicPoint: function( point )
+        {
+            this._magicpiont = point;
+        },
+
+        getMagicPoint: function()
+        {
+            return this._magicpiont;
+        },
+
+        setFirePoint: function( point )
+        {
+            this._firepiont = point;
+        },
+
+        getFirePoint: function()
+        {
+            return this._firepiont;
+        },
+
+        setEarthPoint: function( point )
+        {
+            this._earthpiont = point;
+        },
+
+        getEarthPoint: function()
+        {
+            return this._earthpiont;
+        },
+
+        setWindPoint: function( point )
+        {
+            this._windpiont = point;
+        },
+
+        getWindPoint: function()
+        {
+            return this._windpiont;
+        },
+
+        setWaterPoint: function( point )
+        {
+            this._waterpiont = point;
+        },
+
+        getWaterPoint: function()
+        {
+            return this._waterpiont;
+        },
+
+        setThunderPoint: function( point )
+        {
+            this._thunderpiont = point;
+        },
+
+        getThunderPoint: function()
+        {
+            return this._thunderpiont;
+        },
+
+        getSpeedValue: function()
+        {
+            var speed = ACTION_SEQUENCE_MAX_VALUE / this._windpiont;
+            speed = ~~speed;
+
+            return speed;
         }
 
 //        onTouchBegan: function (touch, event)
 //        {
-//        },
+//        }
 //
 //        onTouchMoved: function (touch, event)
 //        {
