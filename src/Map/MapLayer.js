@@ -144,6 +144,11 @@ var MapLayer = cc.Layer.extend({
             char.setWaterPoint( g_CharList[i].water );
             char.setThunderPoint( g_CharList[i].thunder );
 
+            for( var si = 0; si < g_CharList[i].skill.length; ++si )
+            {
+                char.addSkill( g_CharList[i].skill[si] );
+            }
+
             char.setEnabled( false );
 
             this._mapChars.push( char );
@@ -573,8 +578,13 @@ var MapLayer = cc.Layer.extend({
         {
             this.clearMapFlags();
 
-            this.initCommandMenu( this._curChar );
-            this.displayCommandMenuForChar();
+            if( this._curChar == targetchar )
+            {
+                this.initCommandMenu( this._curChar );
+                this.displayCommandMenuForChar();
+
+                cc.log( "Attack Damage " + this._curChar.getAttackDamageValue() );
+            }
         }
     },
 
@@ -719,37 +729,14 @@ var MapLayer = cc.Layer.extend({
 
     onCharAttacking: function( enemy )
     {
-        cc.log( "CharAttacking!" );
-        // attack action
-        var attackPos = this._curChar.getPosition();
-        var rotPos = this._curChar.getRotationPoint();
-        attackPos.x += rotPos.x * this._curChar.width * 0.5;
-        attackPos.y += rotPos.y * this._curChar.height * 0.5;
-
-        var action = cc.Sequence.create(
-            cc.MoveTo.create( 0.2, attackPos ),
-            cc.MoveTo.create( 0.2, this._curChar.getPosition() ),
-            cc.CallFunc.create( this.onCharAttackEnd, this )
-        );
-
         this.setEnabled( false );
         this.reorderChild( this._curChar, g_GameZOrder.actionchar );
-        this._curChar.runAction( action );
 
-        // injure action
+        this._curChar.doAttackAction( this.onCharAttackEnd(), this );
         if( enemy )
         {
-            var enemyPos = enemy.getPosition();
-            var enemyRotPos = enemy.getRotationPoint();
-            enemyPos.x -= enemyRotPos.x * enemy.width * 0.25;
-            enemyPos.y -= enemyRotPos.y * enemy.height * 0.25;
-
-            var enemyaction = cc.Sequence.create(
-                cc.DelayTime.create( 0.1 ),
-                cc.MoveTo.create( 0.1, enemyPos ),
-                cc.MoveTo.create( 0.1, enemy.getPosition() )
-            );
-            enemy.runAction( enemyaction );
+            enemy.doInjureAction();
+            enemy.displayDamageLabel( 123 );
         }
     },
 

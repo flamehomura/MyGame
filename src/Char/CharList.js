@@ -13,11 +13,13 @@ var g_CharList = [
 
         health: 500,
         magic: 0,
-        fire: 97,
-        earth: 75,
-        wind: 84,
-        water: 77,
-        thunder: 91
+        fire: 59,
+        earth: 52,
+        wind: 49,
+        water: 29,
+        thunder: 20,
+
+        skill: []
     },
     {
         imagefile: s_Char2,
@@ -29,11 +31,13 @@ var g_CharList = [
 
         health: 400,
         magic: 0,
-        fire: 74,
-        earth: 84,
-        wind: 82,
-        water: 98,
-        thunder: 73
+        fire: 24,
+        earth: 30,
+        wind: 34,
+        water: 45,
+        thunder: 62,
+
+        skill: [1]
     },
     {
         imagefile: s_Char_1,
@@ -43,13 +47,15 @@ var g_CharList = [
         posrow: 5,
         poscolumn: 2,
 
-        health: 500,
+        health: 400,
         magic: 0,
-        fire: 81,
-        earth: 73,
-        wind: 80,
-        water: 84,
-        thunder: 71
+        fire: 40,
+        earth: 40,
+        wind: 36,
+        water: 33,
+        thunder: 20,
+
+        skill: []
     },
     {
         imagefile: s_Char_2,
@@ -59,13 +65,15 @@ var g_CharList = [
         posrow: 6,
         poscolumn: 5,
 
-        health: 300,
+        health: 500,
         magic: 0,
-        fire: 96,
-        earth: 76,
-        wind: 61,
-        water: 51,
-        thunder: 78
+        fire: 67,
+        earth: 57,
+        wind: 28,
+        water: 28,
+        thunder: 20,
+
+        skill: []
     },
     {
         imagefile: s_Char_3,
@@ -77,10 +85,12 @@ var g_CharList = [
 
         health: 400,
         magic: 0,
-        fire: 88,
-        earth: 80,
-        wind: 93,
-        water: 67,
-        thunder: 70
+        fire: 21,
+        earth: 32,
+        wind: 31,
+        water: 42,
+        thunder: 53,
+
+        skill: [1]
     }
 ]

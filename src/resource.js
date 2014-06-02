@@ -13,6 +13,7 @@ var s_Char_3 = "char/_3.png"
 var s_CharBlueTeam = "char/blue.png"
 var s_CharRedTeam = "char/red.png"
 var s_CharYellowTeam = "char/yellow.png"
+var s_CharSkill = "char/magic.png"
 
 var s_CommandMenuHead = "cmd/cmdbg_f.png"
 var s_CommandMenuTail = "cmd/cmdbg_b.png"
@@ -37,6 +38,7 @@ var g_resources = [
     s_CharBlueTeam,
     s_CharRedTeam,
     s_CharYellowTeam,
+    s_CharSkill,
 
     s_BackGround,
     s_DemoBackGround,

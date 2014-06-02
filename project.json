@@ -13,6 +13,7 @@
         "src/Map/MapSprite.js",
         "src/Map/MapItemSprite.js",
         "src/Map/MapLayer.js",
+        "src/Char/CharSkill.js",
         "src/Char/CharList.js",
         "src/Char/CharSprite.js",
         "src/Command/CommandLayer.js",

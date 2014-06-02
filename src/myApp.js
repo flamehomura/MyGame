@@ -9,7 +9,10 @@ var g_GameZOrder =
 
     char: 1000,
     charteam:1001,
-    actionchar: 2000,
+    chareffect:2000,
+    charmsg:2500,
+
+    actionchar: 3000,
 
     menu: 5000,
 
@@ -80,8 +83,8 @@ var MyLayer = cc.Layer.extend({
         this.helloLabel = cc.LabelTTF.create("Moe Moe 乱战纪", "黑体", 38);
         // position the label on the center of the screen
         this.helloLabel.setPosition(size.width / 2, size.height - 100);
-        var LabelColor = cc.color( 0, 255, 0 );
-        this.helloLabel.setColor( LabelColor );
+        this.helloLabel.setColor( cc.color( 0, 255, 0 ) );
+        this.helloLabel.enableStroke( cc.color( 0, 0, 0, 0 ), 5 );
         // add the label as a child to this layer
         this.addChild(this.helloLabel, g_GameZOrder.font);
 
@@ -117,6 +120,10 @@ var MyLayer = cc.Layer.extend({
 var MyScene = cc.Scene.extend({
     onEnter:function () {
         this._super();
+
+        // initial
+        initCharSkillList();
+
         var layer = new MyLayer();
         this.addChild(layer);
         layer.init();
