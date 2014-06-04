@@ -354,6 +354,26 @@ var CharSprite = MapItemSprite.extend({
             }
         },
 
+        getSkillList: function()
+        {
+            return this._skilllist;
+        },
+
+        getCurrentSkill: function()
+        {
+            if( this._curSkillIdx >= 0 && this._curSkillIdx < this._skilllist.length )
+            {
+                return this._skilllist[this._curSkillIdx];
+            }
+
+            if( this._skilllist.length > 0 )
+            {
+                return this._skilllist[0];
+            }
+
+            return null;
+        },
+
         getAttackDamageValue: function()
         {
             var weapmodifier;
@@ -379,20 +399,23 @@ var CharSprite = MapItemSprite.extend({
 
         getSkillDamageValue: function()
         {
-            if( this._curSkillIdx < 0 || this._curSkillIdx >= this._skilllist.length )
+            var skill = this.getCurrentSkill();
+            if( !skill )
             {
                 return 0;
             }
 
-            var minvalue = this._thunderpiont - this._skilllist[this._curSkillIdx].getSkillPowerModifier();
-            var maxvalue = this._thunderpiont + this._skilllist[this._curSkillIdx].getSkillPowerModifier();
+            var skillpower = this._thunderpiont * skill.getSkillPowerPct() / 100;
+
+            var minvalue = this._thunderpiont - skill.getSkillPowerModifier();
+            var maxvalue = this._thunderpiont + skill.getSkillPowerModifier();
 
             if( minvalue < 0 )
             {
                 minvalue = 0;
             }
 
-            var value = Math.Random() * ( maxvalue - minvalue ) + minvalue;
+            var value = Math.random() * ( maxvalue - minvalue ) + minvalue;
 
             return ~~value;
         },
@@ -544,6 +567,8 @@ var CharSprite = MapItemSprite.extend({
             {
                 this.died();
             }
+
+            cc.log( "Take Skill Damage " + damage + " " + "Current Health " + this._healthpiont );
 
             return damage;
         },

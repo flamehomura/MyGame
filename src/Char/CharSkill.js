@@ -13,6 +13,7 @@ var CharSkill = cc.Class.extend({
     _skillpowerpct: 100,
     _skillpowermodifier: 0,
     _skilltype: 0,
+    _skillrange: 0,
 
     getSkillId: function()
     {
@@ -29,6 +30,11 @@ var CharSkill = cc.Class.extend({
         return this._skilltype;
     },
 
+    getSkillRange: function()
+    {
+        return this._skillrange;
+    },
+
     getSkillPowerPct: function()
     {
         return this._skillpowerpct;
@@ -37,6 +43,27 @@ var CharSkill = cc.Class.extend({
     getSkillPowerModifier: function()
     {
         return this._skillpowermodifier;
+    },
+
+    isFriendlySkill: function()
+    {
+        switch( this._skilltype )
+        {
+            case SKILLTYPE_DAMAGE:
+                return false;
+
+            case SKILLTYPE_HEAL:
+                return true;
+
+            case SKILLTYPE_BUFF:
+                return true;
+
+            case SKILLTYPE_DEBUFF:
+                return false;
+
+            default:
+                return false;
+        }
     }
 });
 
@@ -47,6 +74,7 @@ var g_skillinfolist = [
         id: 1,
         name: "魔弹",
         type: SKILLTYPE_DAMAGE,
+        range: 4,
         powerpct: 100,
         powermod: 10
     }
@@ -60,6 +88,7 @@ var initCharSkillList = function()
         skill._skillid = g_skillinfolist[i].id;
         skill._skillname = g_skillinfolist[i].name;
         skill._skilltype = g_skillinfolist[i].type;
+        skill._skillrange = g_skillinfolist[i].range;
         skill._skillpowerpct = g_skillinfolist[i].powerpct;
         skill._skillpowermodifier = g_skillinfolist[i].powermod;
 

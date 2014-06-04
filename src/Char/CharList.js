@@ -7,7 +7,7 @@ var g_CharList = [
         imagefile: s_Char1,
         team: 0,
         moverange: 5,
-        attackrange: 2,
+        attackrange: 1,
         posrow: 0,
         poscolumn: 3,
 
@@ -43,7 +43,7 @@ var g_CharList = [
         imagefile: s_Char_1,
         team: 1,
         moverange: 4,
-        attackrange: 1,
+        attackrange: 2,
         posrow: 5,
         poscolumn: 2,
 
@@ -60,8 +60,8 @@ var g_CharList = [
     {
         imagefile: s_Char_2,
         team: 1,
-        moverange: 3,
-        attackrange: 2,
+        moverange: 4,
+        attackrange: 1,
         posrow: 6,
         poscolumn: 5,
 

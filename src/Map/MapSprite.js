@@ -11,22 +11,26 @@ var g_MapObjInfo = [
     {
         // MAP_OBJ_GRASS
         movepasscost:1,
-        attackpasscost:1
+        attackpasscost:1,
+        canskillon: true
     },
     {
         // MAP_OBJ_FOREST
         movepasscost:2,
-        attackpasscost:1
+        attackpasscost:1,
+        canskillon: true
     },
     {
         // MAP_OBJ_RIVER
         movepasscost:-1,
-        attackpasscost:1
+        attackpasscost:1,
+        canskillon: true
     },
     {
         // MAP_OBJ_WALL
         movepasscost:-1,
-        attackpasscost:-1
+        attackpasscost:-1,
+        canskillon: true
     },
 ]
 
@@ -65,6 +69,16 @@ var MapSprite = cc.Sprite.extend({
         }
 
         return 0;
+    },
+
+    canSkillOn: function()
+    {
+        if( this._objtype >= 0 && this._objtype < g_MapObjInfo.length )
+        {
+            return g_MapObjInfo[this._objtype].canskillon;
+        }
+
+        return false;
     },
 
     setMapFlagItem: function( flag )

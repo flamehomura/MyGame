@@ -130,6 +130,11 @@ var MapLayer = cc.Layer.extend({
         return column >= 0 && column < this._column;
     },
 
+    getMapDistance: function( rowfrom, columnfrom, rowto, columnto )
+    {
+        return Math.abs( rowfrom - rowto ) +  Math.abs( columnfrom - columnto );
+    },
+
     initChars: function()
     {
         for( var i = 0; i < g_CharList.length; ++i )
@@ -237,8 +242,8 @@ var MapLayer = cc.Layer.extend({
         else
         {
             this.clearMapFlags();
-            this.initCommandMenu( this._curChar );
             this.displayCommandMenuForChar();
+            this.initCommandMenu( this._curChar );
         }
     },
 
@@ -336,6 +341,11 @@ var MapLayer = cc.Layer.extend({
             {
                 this._commandMenu.setCommandItemEnabled( COMMAND_MOVE, false );
             }
+
+            if( char.getSkillList().length > 0 )
+            {
+                this._commandMenu.setCommandItemEnabled( COMMAND_SKILL, true );
+            }
         }
     },
 
@@ -380,6 +390,66 @@ var MapLayer = cc.Layer.extend({
         }
         this._curCost = 0;
         this.addAttackRangeFrom( this._curChar.getMapRow(), this._curChar.getMapColumn(), true, this._curChar, null );
+    },
+
+    displaySkillRangeForChar: function( skill )
+    {
+        if( !this._curChar )
+        {
+            return;
+        }
+
+        var charrow = this._curChar.getMapRow();
+        var charcolumn = this._curChar.getMapColumn();
+        var range = skill.getSkillRange();
+
+        for( var i = charcolumn - range; i <= charcolumn + range; ++i )
+        {
+            for( var j = charrow - range; j <= charrow + range; ++j )
+            {
+                if( this.checkMapRow( j ) && this.checkMapColumn( i ) )
+                {
+                    if( this.getMapDistance( j, i, charrow, charcolumn ) <= range )
+                    {
+                        var bAddFlag = true;
+                        var mapsprite = this.getMapSprite( j, i );
+                        if( mapsprite )
+                        {
+                            if( !mapsprite.canSkillOn() )
+                            {
+                                bAddFlag = false;
+                            }
+
+                            if( mapsprite.getMapFlagItem() )
+                            {
+                                bAddFlag = false;
+                            }
+
+                            var another = mapsprite.getMapCharItem();
+                            if( another == this._curChar )
+                            {
+                                bAddFlag = false;
+                            }
+
+                            if( another && another.getTeam() == this._curChar.getTeam() && !skill.isFriendlySkill() )
+                            {
+                                bAddFlag = false;
+                            }
+
+                            if( another && another.getTeam() != this._curChar.getTeam() && skill.isFriendlySkill() )
+                            {
+                                bAddFlag = false;
+                            }
+
+                            if( bAddFlag )
+                            {
+                                this.addSkillRangeAt( j, i );
+                            }
+                        }
+                    }
+                }
+            }
+        }
     },
 
     addMoveRangeFrom: function( row, column, firststep, char )
@@ -582,23 +652,27 @@ var MapLayer = cc.Layer.extend({
             return;
         }
 
-        if( this._mapSkillItemIndex < this._mapSkillItems.length )
-        {
-            this._mapSkillItems[this._mapSkillItemIndex].setPosition( this.getMapItemPos( row, column ) );
-            this._mapSkillItems[this._mapSkillItemIndex].setMapPosition( row, column );
-            this._mapSkillItems[this._mapSkillItemIndex].setVisible( true );
-        }
-        else
+        if( this._mapSkillItemIndex >= this._mapSkillItems.length )
         {
             var item = new MapItemSprite();
             item.initWithFile( s_MapSkillRange );
             item.initWithItemType( MAP_ITEM_SKILLFLAG );
             item.setAnchorPoint( 0.5, 0.5 );
-            item.setPosition( this.getMapItemPos( row, column ) );
-            item.setMapPosition( row, column );
+            item.initCallBack( this.onCharSkill, this );
             this.addChild( item, g_GameZOrder.mapitem );
 
             this._mapSkillItems.push( item );
+        }
+
+        this._mapSkillItems[this._mapSkillItemIndex].setPosition( this.getMapItemPos( row, column ) );
+        this._mapSkillItems[this._mapSkillItemIndex].setMapPosition( row, column );
+        this._mapSkillItems[this._mapSkillItemIndex].setVisible( true );
+        this._mapSkillItems[this._mapSkillItemIndex].setEnabled( true );
+
+        var mapsprite = this.getMapSprite( row, column );
+        if( mapsprite )
+        {
+            mapsprite.setMapFlagItem( this._mapSkillItems[this._mapSkillItemIndex] );
         }
 
         ++this._mapSkillItemIndex;
@@ -663,22 +737,18 @@ var MapLayer = cc.Layer.extend({
     {
         for( var i = 0; i < this._mapMoveItems.length; ++i )
         {
-            var row = this._mapMoveItems[i].getMapRow();
-            var column = this._mapMoveItems[i].getMapColumn();
-
-            this._mapMoveItems[i].clearinfo();
-
-            var mapsprite = this.getMapSprite( row, column );
+            var mapsprite = this.getMapSpriteByItem( this._mapMoveItems[i] );
             if( mapsprite )
             {
                 mapsprite.setMapFlagItem( null );
             }
+            this._mapMoveItems[i].clearinfo();
         }
         this._mapMoveItemIndex = 0;
 
         for( var i = 0; i < this._mapAttackItems.length; ++i )
         {
-            var mapsprite = this.getMapSprite( this._mapAttackItems[i].getMapRow(), this._mapAttackItems[i].getMapColumn() );
+            var mapsprite = this.getMapSpriteByItem( this._mapAttackItems[i] );
             if( mapsprite )
             {
                 mapsprite.setMapFlagItem( null );
@@ -686,6 +756,17 @@ var MapLayer = cc.Layer.extend({
             this._mapAttackItems[i].clearinfo();
         }
         this._mapAttackItemIndex = 0;
+
+        for( var i = 0; i < this._mapSkillItems.length; ++i )
+        {
+            var mapsprite = this.getMapSpriteByItem( this._mapSkillItems[i] );
+            if( mapsprite )
+            {
+                mapsprite.setMapFlagItem( null );
+            }
+            this._mapSkillItems[i].clearinfo();
+        }
+        this._mapSkillItemIndex = 0;
     },
 
     onCharMove: function( moveTarget )
@@ -745,10 +826,7 @@ var MapLayer = cc.Layer.extend({
         // ....
         if( attackTarget != null )
         {
-            var row = attackTarget.getMapRow();
-            var column = attackTarget.getMapColumn();
-
-            var mapsprite = this.getMapSprite( row, column );
+            var mapsprite = this.getMapSpriteByItem( attackTarget );
             if( mapsprite )
             {
                 var enemychar = mapsprite.getMapCharItem();
@@ -788,6 +866,62 @@ var MapLayer = cc.Layer.extend({
     onCharAttackEnd: function()
     {
         this.reorderChild( this._curChar, g_GameZOrder.char );
+        this.setEnabled( true );
+        this.turnEnd();
+    },
+
+    onCharSkill: function( skillTarget )
+    {
+        cc.log( "onCharSkill" );
+        if( skillTarget != null )
+        {
+            var mapsprite = this.getMapSpriteByItem( skillTarget );
+            if( mapsprite )
+            {
+                var targetchar = mapsprite.getMapCharItem();
+                if( targetchar )
+                {
+                    this._curChar.setRotationToPos( targetchar.getMapRow(), targetchar.getMapColumn() );
+                    this.onCharChanting( targetchar );
+                }
+            }
+            this.clearMapFlags();
+        }
+    },
+
+    onCharChanting: function( enemy )
+    {
+        this.setEnabled( false );
+
+        this._curChar.doSkillAction( this.onCharSkillEnd, this );
+        if( enemy )
+        {
+            var skill = this._curChar.getCurrentSkill();
+            if( skill )
+            {
+                if( this._curChar.checkHitTarget( enemy, DAMAGE_TYPE_ABILITYPOWER ) )
+                {
+                    if( skill.isFriendlySkill() )
+                    {
+                        enemy.doSkillHealAction();
+                    }
+                    else
+                    {
+                        enemy.doSkillDamageAction();
+                        var damage = enemy.takeDamage( this._curChar.getSkillDamageValue(), DAMAGE_TYPE_ABILITYPOWER, this._curChar );
+                        enemy.displayDamageLabel( damage );
+                    }
+                }
+                else
+                {
+                    enemy.doAvoidAction();
+                }
+            }
+        }
+    },
+
+    onCharSkillEnd: function()
+    {
         this.setEnabled( true );
         this.turnEnd();
     },
@@ -850,6 +984,11 @@ var MapLayer = cc.Layer.extend({
         if( this._commandMenu )
         {
             this._commandMenu.setVisible( false );
+        }
+
+        if( this._curChar )
+        {
+            this.displaySkillRangeForChar( this._curChar.getCurrentSkill() );
         }
     },
 
@@ -923,6 +1062,63 @@ var MapLayer = cc.Layer.extend({
             this._curChar.setEnemy( EnemyList[bestidx] );
             this.aiCmdMove( AttackFlagList[bestidx] );
         }
+        else
+        {
+            var dis = 999;
+            var bestenemy;
+            for( var i = 0; i < this._mapChars.length; ++i )
+            {
+                if( this._mapChars[i].isVisible() && this._mapChars[i].getTeam() != this._curChar.getTeam() )
+                {
+                    var chardis = this.getMapDistance( this._mapChars[i].getMapRow(),
+                        this._mapChars[i].getMapColumn(),
+                        this._curChar.getMapRow(),
+                        this._curChar.getMapColumn() );
+
+                    if( chardis < dis )
+                    {
+                        dis = chardis;
+                        bestenemy = this._mapChars[i];
+                    }
+                }
+            }
+
+            if( bestenemy )
+            {
+                dis = 999;
+                var targetflag;
+
+                for( var i = 0; i < this._mapMoveItems.length; ++i )
+                {
+                    if( this._mapMoveItems[i].isVisible() )
+                    {
+                        var chardis = this.getMapDistance( this._mapMoveItems[i].getMapRow(),
+                            this._mapMoveItems[i].getMapColumn(),
+                            bestenemy.getMapRow(),
+                            bestenemy.getMapColumn() );
+
+                        if( chardis < dis )
+                        {
+                            dis = chardis;
+                            targetflag = this._mapMoveItems[i];
+                        }
+                    }
+                }
+
+                if( targetflag )
+                {
+                    this.aiCmdMove( targetflag );
+                }
+                else
+                {
+                    this.aiCmdDefence();
+                }
+            }
+            else
+            {
+                this.aiCmdIgnore();
+            }
+        }
     },
 
     aiCmdMove: function( moveTarget )
@@ -976,7 +1172,7 @@ var MapLayer = cc.Layer.extend({
         }
         else
         {
-            this.turnEnd();
+            this.aiCmdDefence();
         }
     },
 
@@ -1016,6 +1212,17 @@ var MapLayer = cc.Layer.extend({
     aiCmdAttackEnd: function()
     {
         this.reorderChild( this._curChar, g_GameZOrder.char );
+        this.turnEnd();
+    },
+
+    aiCmdDefence: function()
+    {
+        this._curChar.setDefence();
+        this.turnEnd();
+    },
+
+    aiCmdIgnore: function()
+    {
         this.turnEnd();
     }
 })
