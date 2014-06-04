@@ -174,10 +174,10 @@ var MapItemSprite = cc.Sprite.extend({
 
     touchStateCheck: function()
     {
-        if( this._itemtype == MAP_ITEM_ATTACKFLAG )
+        if( this._itemtype == MAP_ITEM_ATTACKFLAG || this._itemtype == MAP_ITEM_SKILLFLAG )
         {
             var map = this.parent;
-            var mapscript = map.getMapSprite( this._maprow, this._mapcolumn );
+            var mapscript = map.getMapSpriteByItem( this );
             if( mapscript )
             {
                 var char = mapscript.getMapCharItem();

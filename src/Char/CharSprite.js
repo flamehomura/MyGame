@@ -73,6 +73,7 @@ var CharSprite = MapItemSprite.extend({
         {
             this._super();
             this.initWithItemType( MAP_ITEM_CHAR );
+            this._skilllist = new Array();
         },
 
         setTeam: function( teamid )
