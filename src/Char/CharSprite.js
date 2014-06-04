@@ -31,8 +31,8 @@ var PERFECT_DAMAGE_MODIFIER = 2;
 var MAX_PERFECT_DEFENCE_DAMAGE = 5;
 var MAX_SKILLDAMAGE_REDUCE_PCT = 50;
 
-var CERTAIN_AVOID_MODIFIER = 0.33;
-var CERTAIN_HIT_MODIFIER = 3;
+var CERTAIN_AVOID_MODIFIER = 0.2;
+var CERTAIN_HIT_MODIFIER = 2;
 
 var CharSprite = MapItemSprite.extend({
         _state: STATE_UNGRABBED,
@@ -59,11 +59,15 @@ var CharSprite = MapItemSprite.extend({
         _thunderpiont: 0,
 
         _inDefence: false,
+        _isDead: false,
 
         _weapon: null,
 
         _skilllist: [],
         _curSkillIdx: -1,
+
+        // for ai
+        _enemy: null,
 
         ctor: function ()
         {
@@ -225,6 +229,16 @@ var CharSprite = MapItemSprite.extend({
             this._inDefence = true;
         },
 
+        setDead: function( dead )
+        {
+            this._isDead = dead;
+        },
+
+        isDead: function()
+        {
+            return this._isDead;
+        },
+
         touchStateCheck: function()
         {
             if( this._teamid != 0 )
@@ -319,6 +333,16 @@ var CharSprite = MapItemSprite.extend({
         getThunderPoint: function()
         {
             return this._thunderpiont;
+        },
+
+        setEnemy: function( enemy )
+        {
+            this._enemy = enemy;
+        },
+
+        getEnemy: function()
+        {
+            return this._enemy;
         },
 
         addSkill: function( skillid )
@@ -420,7 +444,7 @@ var CharSprite = MapItemSprite.extend({
             }
 
             // from back
-            if( this.getRotationPoint() == target.getRotationPoint() )
+            if( cc.pointEqualToPoint( this.getRotationPoint(), target.getRotationPoint() ) )
             {
                 return true;
             }
@@ -446,11 +470,11 @@ var CharSprite = MapItemSprite.extend({
         {
             if( damagetype == DAMAGE_TYPE_ATTACKDAMAGE )
             {
-                this.takeAttackDamage( damage, causer );
+                return this.takeAttackDamage( damage, causer );
             }
             else if( damagetype == DAMAGE_TYPE_ABILITYPOWER )
             {
-                this.takeSkillDamage( damage, causer );
+                return this.takeSkillDamage( damage, causer );
             }
         },
 
@@ -488,6 +512,10 @@ var CharSprite = MapItemSprite.extend({
             {
                 this.died();
             }
+
+            cc.log( "Take Attack Damage " + damage + " " + "Current Health " + this._healthpiont );
+
+            return damage;
         },
 
         takeSkillDamage: function( damage, causer )
@@ -516,11 +544,13 @@ var CharSprite = MapItemSprite.extend({
             {
                 this.died();
             }
+
+            return damage;
         },
 
         died: function()
         {
-            this.setVisible( false );
+            this.setDead( true );
         },
 
         displayMissLabel: function()
@@ -529,7 +559,7 @@ var CharSprite = MapItemSprite.extend({
             {
                 this._misslabel = cc.LabelTTF.create( "MISS", "微软雅黑", 20 );
                 this._misslabel.setColor( cc.color( 255, 255, 0, 255 ) ); // yellow
-                this._damagelabel.enableStroke( cc.color( 0, 0, 0, 0 ), 2 );
+                this._misslabel.enableStroke( cc.color( 0, 0, 0, 0 ), 2 );
                 this.parent.addChild( this._misslabel, g_GameZOrder.charmsg );
             }
 
@@ -666,6 +696,33 @@ var CharSprite = MapItemSprite.extend({
                 action = cc.Sequence.create(
                     cc.MoveTo.create( 0.2, pos ),
                     cc.MoveTo.create( 0.2, this.getPosition() )
+                );
+            }
+
+            this.runAction( action );
+
+            this.displayMissLabel();
+        },
+
+        doSelectedAction: function( actionendcallback, target )
+        {
+            var action;
+            var color = this.getColor();
+            if( actionendcallback != null && target != null )
+            {
+                action = cc.Sequence.create(
+                    cc.TintTo.create( 0.2, 255, 255, 0 ),
+                    cc.TintTo.create( 0.2, color.r, color.g, color.b ),
+                    cc.DelayTime.create( 0.1 ),
+                    cc.CallFunc.create( actionendcallback, target )
+                );
+            }
+            else
+            {
+                action = cc.Sequence.create(
+                    cc.TintTo.create( 0.2, 255, 255, 0 ),
+                    cc.TintTo.create( 0.2, color.r, color.g, color.b ),
+                    cc.DelayTime.create( 0.1 )
                 );
             }
 

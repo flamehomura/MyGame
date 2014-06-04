@@ -45,7 +45,7 @@ var g_skilllist = [];
 var g_skillinfolist = [
     {
         id: 1,
-        name: "魔矢",
+        name: "魔弹",
         type: SKILLTYPE_DAMAGE,
         powerpct: 100,
         powermod: 10

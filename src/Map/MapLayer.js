@@ -5,7 +5,8 @@
 var MAP_ITEM_WIDTH = 64
 var MAP_ITEM_HEIGHT = 64
 
-var MOVE_DURATION_PER_STEP = 0.3
+var AI_SLEEP_DURATION = 1;
+var MOVE_DURATION_PER_STEP = 0.3;
 
 var COMMANDMENU_WIDTH = 2;
 var COMMANDMENU_HEIGHT = 3;
@@ -54,7 +55,7 @@ var MapLayer = cc.Layer.extend({
 
     gameStart: function()
     {
-        this.getNextChar();
+        this.schedule( this.getNextChar, 0.5 );
     },
 
     setEnabled: function( enabled )
@@ -112,6 +113,11 @@ var MapLayer = cc.Layer.extend({
         }
 
         return null;
+    },
+
+    getMapSpriteByItem: function( item )
+    {
+        return this.getMapSprite( item.getMapRow(), item.getMapColumn() );
     },
 
     checkMapRow: function( row )
@@ -179,6 +185,8 @@ var MapLayer = cc.Layer.extend({
 
     getNextChar: function()
     {
+        this.unschedule( this.getNextChar );
+
         if( this._curChar )
         {
             this._curChar.setEnabled( false );
@@ -191,6 +199,11 @@ var MapLayer = cc.Layer.extend({
 
             for( var i = 0; i < this._mapChars.length; ++i )
             {
+                if( !this._mapChars[i].isVisible() )
+                {
+                    continue;
+                }
+
                 if( this._curActionCounter % this._mapChars[i].getSpeedValue() == 0 )
                 {
                     this._curChar = this._mapChars[i];
@@ -202,7 +215,8 @@ var MapLayer = cc.Layer.extend({
 
             if( foundchar )
             {
-                this.turnStart();
+                //this.schedule( this.turnStart, 0.5 );
+                this._curChar.doSelectedAction( this.turnStart, this );
                 break;
             }
         }
@@ -210,11 +224,15 @@ var MapLayer = cc.Layer.extend({
 
     turnStart: function()
     {
+        this.unschedule( this.turnStart );
         this._curChar.setEnabled( true );
 
         if( this._curChar.getTeam() != 0 )
         {
-            this.onIgnoreCmd();
+            this.clearMapFlags();
+            this.setEnabled( false );
+
+            this.aiSelectAction();
         }
         else
         {
@@ -227,6 +245,24 @@ var MapLayer = cc.Layer.extend({
     turnEnd: function()
     {
         this._curChar.setActionState( ACTION_INIT );
+        if( this._curChar.getTeam() != 0 )
+        {
+            this.setEnabled( true );
+        }
+
+        for( var i = 0; i < this._mapChars.length; ++i )
+        {
+            if( this._mapChars[i].isDead() )
+            {
+                var mapsprite = this.getMapSpriteByItem( this._mapChars[i] );
+                if( mapsprite )
+                {
+                    mapsprite.setMapCharItem( null );
+                }
+                this._mapChars[i].setVisible( false );
+            }
+        }
+
         this.getNextChar();
     },
 
@@ -253,6 +289,7 @@ var MapLayer = cc.Layer.extend({
         }
 
         char.setMapPosition( row, column );
+        char.setPosition( this.getMapItemPos( row, column ) );
     },
 
     addCommandMenu: function( row, column )
@@ -470,12 +507,6 @@ var MapLayer = cc.Layer.extend({
             return;
         }
 
-        var anotherchar = mapsprite.getMapCharItem();
-        if( anotherchar && anotherchar.getTeam() == char.getTeam() && anotherchar != char )
-        {
-            return;
-        }
-
         if( !firststep && row == this._curChar.getMapRow() && column == this._curChar.getMapColumn() )
         {
             return;
@@ -483,7 +514,8 @@ var MapLayer = cc.Layer.extend({
 
         if( !mapsprite.getMapFlagItem() )
         {
-            if( row != this._curChar.getMapRow() || column != this._curChar.getMapColumn() )
+            var anotherchar = mapsprite.getMapCharItem();
+            if( !anotherchar || anotherchar.getTeam() != char.getTeam() )
             {
                 this.addAttackRangeAt( row, column, moveflag );
             }
@@ -576,14 +608,17 @@ var MapLayer = cc.Layer.extend({
     {
         if( targetchar instanceof CharSprite )
         {
+            if( targetchar.getTeam() != 0 )
+            {
+                return;
+            }
+
             this.clearMapFlags();
 
             if( this._curChar == targetchar )
             {
                 this.initCommandMenu( this._curChar );
                 this.displayCommandMenuForChar();
-
-                cc.log( "Attack Damage " + this._curChar.getAttackDamageValue() );
             }
         }
     },
@@ -694,6 +729,7 @@ var MapLayer = cc.Layer.extend({
     onCharMoveEnd: function()
     {
         this.unschedule( this.onCharMoveEnd );
+        this._curChar.stopAllActions();
         this._curMovingPath = [];
 
         this.setCharMapPosition( this._curChar, this._curChar.getMapRow(), this._curChar.getMapColumn() );
@@ -719,7 +755,6 @@ var MapLayer = cc.Layer.extend({
                 if( enemychar )
                 {
                     this._curChar.setRotationToPos( enemychar.getMapRow(), enemychar.getMapColumn() );
-                    enemychar.setRotationToPos( this._curChar.getMapRow(), this._curChar.getMapColumn() );
                     this.onCharAttacking( enemychar );
                 }
             }
@@ -732,11 +767,21 @@ var MapLayer = cc.Layer.extend({
         this.setEnabled( false );
         this.reorderChild( this._curChar, g_GameZOrder.actionchar );
 
-        this._curChar.doAttackAction( this.onCharAttackEnd(), this );
+        this._curChar.doAttackAction( this.onCharAttackEnd, this );
         if( enemy )
         {
-            enemy.doInjureAction();
-            enemy.displayDamageLabel( 123 );
+            if( !this._curChar.checkHitTarget( enemy, DAMAGE_TYPE_ATTACKDAMAGE ) )
+            {
+                enemy.setRotationToPos( this._curChar.getMapRow(), this._curChar.getMapColumn() );
+                enemy.doAvoidAction();
+            }
+            else
+            {
+                enemy.setRotationToPos( this._curChar.getMapRow(), this._curChar.getMapColumn() );
+                enemy.doInjureAction();
+                var damage = enemy.takeDamage( this._curChar.getAttackDamageValue(), DAMAGE_TYPE_ATTACKDAMAGE, this._curChar );
+                enemy.displayDamageLabel( damage );
+            }
         }
     },
 
@@ -823,6 +868,154 @@ var MapLayer = cc.Layer.extend({
             this._commandMenu.setVisible( false );
         }
 
+        this.turnEnd();
+    },
+
+
+    // for AIs
+    aiSelectAction: function()
+    {
+        if( this._curChar.getActionState() == ACTION_INIT )
+        {
+            this.displayMoveRangeForChar();
+            this.displayAttackRangeForChar();
+
+            this.schedule( this.aiSelectEnemy, AI_SLEEP_DURATION );
+        }
+    },
+
+    aiSelectEnemy: function()
+    {
+        this.unschedule( this.aiSelectEnemy );
+        var EnemyList = [];
+        var AttackFlagList = [];
+
+        for( var i = 0; i < this._mapAttackItems.length; ++i )
+        {
+            if( this._mapAttackItems[i].isVisible() )
+            {
+                var mapsprite = this.getMapSprite( this._mapAttackItems[i].getMapRow(), this._mapAttackItems[i].getMapColumn() );
+                if( mapsprite )
+                {
+                    var char = mapsprite.getMapCharItem();
+                    if( char != null && char.getTeam() != this._curChar.getTeam() )
+                    {
+                        EnemyList.push( mapsprite.getMapCharItem() );
+                        AttackFlagList.push( this._mapAttackItems[i] );
+                    }
+                }
+            }
+        }
+
+        if( AttackFlagList.length > 0 )
+        {
+            var dis = 999;
+            var bestidx;
+            for( var flagidx = 0; flagidx < AttackFlagList.length; ++flagidx )
+            {
+                if( AttackFlagList[flagidx].getPathPoints().length < dis )
+                {
+                    dis = AttackFlagList[flagidx];
+                    bestidx = flagidx;
+                }
+            }
+
+            this._curChar.setEnemy( EnemyList[bestidx] );
+            this.aiCmdMove( AttackFlagList[bestidx] );
+        }
+    },
+
+    aiCmdMove: function( moveTarget )
+    {
+        if( moveTarget.getPathPoints().length > 0 )
+        {
+            this._curMovingPath = [];
+            var tempPath = moveTarget.getPathPoints();
+            for( var i = 0; i < tempPath.length; ++i )
+            {
+                this._curMovingPath.push( tempPath[i] );
+            }
+            this._curMoveStep = 0;
+
+            this.clearMapFlags();
+            this.clearCharMapPosition( this._curChar );
+            this.schedule( this.aiCmdMoving, MOVE_DURATION_PER_STEP );
+            this.aiCmdMoving();
+        }
+    },
+
+    aiCmdMoving: function()
+    {
+        var path = this._curMovingPath[this._curMoveStep];
+
+        this._curChar.setRotationToPos( path.x, path.y );
+        this._curChar.stopAllActions();
+        this._curChar.runAction( cc.MoveTo.create( MOVE_DURATION_PER_STEP, this.getMapItemPos( path.x, path.y ) ) );
+        this._curChar.setMapPosition( path.x, path.y );
+
+        ++this._curMoveStep;
+        if( this._curMoveStep >= this._curMovingPath.length )
+        {
+            this.unschedule( this.aiCmdMoving );
+            this.schedule( this.aiCmdMoveEnd, MOVE_DURATION_PER_STEP );
+        }
+    },
+
+    aiCmdMoveEnd: function()
+    {
+        this.unschedule( this.aiCmdMoveEnd );
+        this._curMovingPath = [];
+        this._curChar.stopAllActions();
+
+        this.setCharMapPosition( this._curChar, this._curChar.getMapRow(), this._curChar.getMapColumn() );
+        this._curChar.setActionState( ACTION_MOVED );
+
+        if( this._curChar.getEnemy() )
+        {
+            this.aiCmdAttack( this._curChar.getEnemy() );
+        }
+        else
+        {
+            this.turnEnd();
+        }
+    },
+
+    aiCmdAttack: function( target )
+    {
+        // TODO: go to attack
+        // ....
+        if( target )
+        {
+            this._curChar.setRotationToPos( target.getMapRow(), target.getMapColumn() );
+            this.aiCmdAttacking( target );
+        }
+    },
+
+    aiCmdAttacking: function( target )
+    {
+        this.reorderChild( this._curChar, g_GameZOrder.actionchar );
+
+        this._curChar.doAttackAction( this.aiCmdAttackEnd, this );
+        if( target )
+        {
+            if( !this._curChar.checkHitTarget( target, DAMAGE_TYPE_ATTACKDAMAGE ) )
+            {
+                target.setRotationToPos( this._curChar.getMapRow(), this._curChar.getMapColumn() );
+                target.doAvoidAction();
+            }
+            else
+            {
+                target.setRotationToPos( this._curChar.getMapRow(), this._curChar.getMapColumn() );
+                target.doInjureAction();
+                var damage = target.takeDamage( this._curChar.getAttackDamageValue(), DAMAGE_TYPE_ATTACKDAMAGE, this._curChar );
+                target.displayDamageLabel( damage );
+            }
+        }
+    },
+
+    aiCmdAttackEnd: function()
+    {
+        this.reorderChild( this._curChar, g_GameZOrder.char );
         this.turnEnd();
     }
 })

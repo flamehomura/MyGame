@@ -11,7 +11,7 @@ var g_CharList = [
         posrow: 0,
         poscolumn: 3,
 
-        health: 500,
+        health: 300,
         magic: 0,
         fire: 59,
         earth: 52,
@@ -29,7 +29,7 @@ var g_CharList = [
         posrow: 0,
         poscolumn: 7,
 
-        health: 400,
+        health: 250,
         magic: 0,
         fire: 24,
         earth: 30,
@@ -47,7 +47,7 @@ var g_CharList = [
         posrow: 5,
         poscolumn: 2,
 
-        health: 400,
+        health: 250,
         magic: 0,
         fire: 40,
         earth: 40,
@@ -65,7 +65,7 @@ var g_CharList = [
         posrow: 6,
         poscolumn: 5,
 
-        health: 500,
+        health: 300,
         magic: 0,
         fire: 67,
         earth: 57,
@@ -83,7 +83,7 @@ var g_CharList = [
         posrow: 5,
         poscolumn: 8,
 
-        health: 400,
+        health: 250,
         magic: 0,
         fire: 21,
         earth: 32,
