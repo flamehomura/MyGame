@@ -74,7 +74,7 @@ var g_skillinfolist = [
         id: 1,
         name: "魔弹",
         type: SKILLTYPE_DAMAGE,
-        range: 4,
+        range: 3,
         powerpct: 100,
         powermod: 10
     }
