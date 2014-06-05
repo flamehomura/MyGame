@@ -264,6 +264,7 @@ var MapLayer = cc.Layer.extend({
                 {
                     mapsprite.setMapCharItem( null );
                 }
+                this._mapChars[i].setMapPosition( -1, -1 );
                 this._mapChars[i].setVisible( false );
             }
         }
@@ -273,12 +274,7 @@ var MapLayer = cc.Layer.extend({
 
     clearCharMapPosition: function( char )
     {
-        var prerow , precolumn;
-
-        prerow = char.getMapRow();
-        precolumn = char.getMapColumn();
-
-        var mapsprite = this.getMapSprite( prerow, precolumn );
+        var mapsprite = this.getMapSpriteByItem( char );
         if( mapsprite )
         {
             mapsprite.setMapCharItem( null );

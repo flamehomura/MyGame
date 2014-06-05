@@ -486,6 +486,7 @@ var CharSprite = MapItemSprite.extend({
             }
 
             var hitpct = ( this.getDexValue() - certainavoidvalue ) / ( certainhitvalue - certainavoidvalue );
+            hitpct = 1.0 - ( 1.0 - hitpct ) * ( 1.0 - hitpct );
 
             return Math.random() < hitpct;
         },
